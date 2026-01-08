@@ -47,7 +47,7 @@ export function EmailCapture({
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start md:justify-center px-3 py-6 md:px-4 md:py-8">
+    <div className="min-h-screen flex flex-col items-center justify-start md:justify-center px-4 py-6 md:px-4 md:py-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -59,31 +59,31 @@ export function EmailCapture({
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-          className="flex justify-center mb-4 md:mb-6"
+          className="flex justify-center mb-5 md:mb-6"
         >
-          <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 rounded-full bg-primary/20 border border-primary/30">
-            <Lock className="w-6 h-6 md:w-8 md:h-8 text-primary" />
+          <div className="inline-flex items-center justify-center w-16 h-16 md:w-16 md:h-16 rounded-full bg-primary/20 border border-primary/30">
+            <Lock className="w-8 h-8 md:w-8 md:h-8 text-primary" />
           </div>
         </motion.div>
 
         {/* Title */}
-        <h2 className="font-serif-display text-xl md:text-3xl font-bold text-center mb-3 md:mb-4">
+        <h2 className="font-serif-display text-2xl md:text-3xl font-bold text-center mb-4 md:mb-4">
           <span className="text-gradient-gold">Salve Seus Resultados</span>
           <br />
           <span className="text-foreground">Personalizados</span>
         </h2>
 
-        <p className="text-center text-muted-foreground mb-4 md:mb-8 text-xs md:text-base leading-relaxed px-2">
+        <p className="text-center text-muted-foreground mb-5 md:mb-8 text-base md:text-base leading-relaxed px-2">
           Você está a apenas 2 perguntas de descobrir seu tipo exato de magnetismo 
           masculino e receber seu plano personalizado de transformação.
         </p>
 
         {/* Benefits */}
-        <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl md:rounded-2xl p-4 md:p-6 mb-4 md:mb-8">
-          <p className="text-xs md:text-sm text-muted-foreground mb-3 md:mb-4">
+        <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl md:rounded-2xl p-5 md:p-6 mb-5 md:mb-8">
+          <p className="text-sm md:text-sm text-muted-foreground mb-4 md:mb-4">
             Para garantir que você receba:
           </p>
-          <ul className="space-y-2 md:space-y-3">
+          <ul className="space-y-3 md:space-y-3">
             {[
               "Sua análise completa e personalizada",
               "Plano específico de transformação para seu tipo",
@@ -95,10 +95,10 @@ export function EmailCapture({
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.3 + index * 0.1 }}
-                className="flex items-start gap-2 md:gap-3"
+                className="flex items-start gap-3 md:gap-3"
               >
-                <span className="text-primary font-bold text-xs md:text-base">✓</span>
-                <span className="text-foreground text-xs md:text-sm leading-relaxed">{benefit}</span>
+                <span className="text-primary font-bold text-base md:text-base">✓</span>
+                <span className="text-foreground text-sm md:text-sm leading-relaxed">{benefit}</span>
               </motion.li>
             ))}
           </ul>
@@ -133,16 +133,16 @@ export function EmailCapture({
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full h-12 md:h-14 bg-gradient-gold text-primary-foreground font-bold text-sm md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02]"
+            className="w-full h-14 md:h-14 bg-gradient-gold text-primary-foreground font-bold text-base md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02]"
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="w-4 h-4 md:w-5 md:h-5 mr-2 animate-spin" />
+                <Loader2 className="w-5 h-5 md:w-5 md:h-5 mr-2 animate-spin" />
                 Salvando...
               </>
             ) : (
               <>
-                <Gift className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                <Gift className="w-5 h-5 md:w-5 md:h-5 mr-2" />
                 SALVAR MEUS RESULTADOS
               </>
             )}
@@ -150,7 +150,7 @@ export function EmailCapture({
         </form>
 
         {/* Privacy note */}
-        <p className="text-[10px] md:text-xs text-muted-foreground text-center mt-4 md:mt-6">
+        <p className="text-xs md:text-xs text-muted-foreground text-center mt-5 md:mt-6">
           🔒 Seus dados estão seguros. Nunca compartilhamos seu email.
         </p>
       </motion.div>
