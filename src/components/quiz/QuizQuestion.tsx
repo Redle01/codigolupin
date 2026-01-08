@@ -78,16 +78,18 @@ export function QuizQuestion({
                   <Button
                     variant="outline"
                     onClick={() => onAnswer(option.id)}
-                    className={`w-full text-left justify-start px-3 py-3 md:p-6 h-auto text-xs md:text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 ${
+                    className={`w-full justify-center md:justify-start px-3 py-3 md:p-6 h-auto text-xs md:text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 gap-2 md:gap-4 ${
                       selectedAnswer === option.id
                         ? "border-primary bg-primary/10"
                         : "border-border"
                     }`}
                   >
-                    <span className="inline-flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full bg-muted text-muted-foreground font-bold mr-2 md:mr-4 shrink-0 text-xs md:text-sm">
+                    <span className="inline-flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full bg-muted text-muted-foreground font-bold shrink-0 text-xs md:text-sm">
                       {option.id.toUpperCase()}
                     </span>
-                    <span className="text-foreground leading-tight line-clamp-3">{option.text}</span>
+                    <span className="flex-1 text-foreground leading-tight line-clamp-3 text-center md:text-left">
+                      {option.text}
+                    </span>
                   </Button>
                 </motion.div>
               ))}
