@@ -10,6 +10,15 @@ import { QuizConfig } from "./QuizConfig";
 const STORAGE_KEY_CHECKOUT = "quiz_checkout_url";
 const STORAGE_KEY_WEBHOOK = "quiz_webhook_url";
 
+// Detect if running inside Lovable editor (iframe)
+const isLovableEditor = () => {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true; // If we can't access, assume we're in an iframe
+  }
+};
+
 export function Quiz() {
   const {
     state,
@@ -94,13 +103,15 @@ export function Quiz() {
         />
       )}
 
-      {/* Config panel */}
-      <QuizConfig
-        checkoutUrl={checkoutUrl}
-        webhookUrl={webhookUrl}
-        onCheckoutUrlChange={setCheckoutUrl}
-        onWebhookUrlChange={setWebhookUrl}
-      />
+      {/* Config panel - only visible inside Lovable editor */}
+      {isLovableEditor() && (
+        <QuizConfig
+          checkoutUrl={checkoutUrl}
+          webhookUrl={webhookUrl}
+          onCheckoutUrlChange={setCheckoutUrl}
+          onWebhookUrlChange={setWebhookUrl}
+        />
+      )}
     </div>
   );
 }
