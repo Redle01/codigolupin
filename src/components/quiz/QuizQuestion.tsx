@@ -67,7 +67,7 @@ export function QuizQuestion({
             </h2>
 
             {/* Options */}
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {options.map((option, index) => (
                 <motion.div
                   key={option.id}
@@ -78,16 +78,16 @@ export function QuizQuestion({
                   <Button
                     variant="outline"
                     onClick={() => onAnswer(option.id)}
-                    className={`w-full text-left justify-start p-6 h-auto text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 ${
+                    className={`w-full text-left justify-start px-4 py-4 md:p-6 h-auto text-sm md:text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 ${
                       selectedAnswer === option.id
                         ? "border-primary bg-primary/10"
                         : "border-border"
                     }`}
                   >
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-muted text-muted-foreground font-bold mr-4 shrink-0">
+                    <span className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-muted text-muted-foreground font-bold mr-3 md:mr-4 shrink-0 text-xs md:text-sm">
                       {option.id.toUpperCase()}
                     </span>
-                    <span className="text-foreground">{option.text}</span>
+                    <span className="text-foreground leading-snug">{option.text}</span>
                   </Button>
                 </motion.div>
               ))}
