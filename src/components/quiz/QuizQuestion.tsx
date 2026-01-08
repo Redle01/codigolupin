@@ -24,24 +24,24 @@ export function QuizQuestion({
   const progress = ((questionNumber) / totalQuestions) * 100;
 
   return (
-    <div className="min-h-screen flex flex-col px-4 py-8">
+    <div className="min-h-screen flex flex-col px-3 py-4 md:px-4 md:py-8">
       {/* Header with progress */}
-      <div className="max-w-2xl mx-auto w-full mb-8">
-        <div className="flex items-center justify-between mb-4">
+      <div className="max-w-2xl mx-auto w-full mb-4 md:mb-8">
+        <div className="flex items-center justify-between mb-2 md:mb-4">
           <button
             onClick={onBack}
             className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
           >
-            <ChevronLeft className="w-5 h-5" />
-            <span className="text-sm">Voltar</span>
+            <ChevronLeft className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="text-xs md:text-sm">Voltar</span>
           </button>
-          <span className="text-sm text-muted-foreground">
-            Pergunta {questionNumber} de {totalQuestions}
+          <span className="text-xs md:text-sm text-muted-foreground">
+            {questionNumber}/{totalQuestions}
           </span>
         </div>
 
         {/* Progress bar */}
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <div className="h-1.5 md:h-2 bg-muted rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-gradient-gold"
             initial={{ width: 0 }}
@@ -52,7 +52,7 @@ export function QuizQuestion({
       </div>
 
       {/* Question */}
-      <div className="flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto w-full">
+      <div className="flex-1 flex flex-col items-center justify-start md:justify-center max-w-2xl mx-auto w-full">
         <AnimatePresence mode="wait">
           <motion.div
             key={questionNumber}
@@ -62,32 +62,32 @@ export function QuizQuestion({
             transition={{ duration: 0.3 }}
             className="w-full"
           >
-            <h2 className="font-serif-display text-2xl md:text-3xl font-bold text-center mb-10 text-foreground">
+            <h2 className="font-serif-display text-lg md:text-3xl font-bold text-center mb-4 md:mb-10 text-foreground leading-tight">
               {question}
             </h2>
 
             {/* Options */}
-            <div className="space-y-3 md:space-y-4">
+            <div className="space-y-2 md:space-y-4">
               {options.map((option, index) => (
                 <motion.div
                   key={option.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
+                  transition={{ delay: index * 0.08 }}
                 >
                   <Button
                     variant="outline"
                     onClick={() => onAnswer(option.id)}
-                    className={`w-full text-left justify-start px-4 py-4 md:p-6 h-auto text-sm md:text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 ${
+                    className={`w-full text-left justify-start px-3 py-3 md:p-6 h-auto text-xs md:text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 ${
                       selectedAnswer === option.id
                         ? "border-primary bg-primary/10"
                         : "border-border"
                     }`}
                   >
-                    <span className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-muted text-muted-foreground font-bold mr-3 md:mr-4 shrink-0 text-xs md:text-sm">
+                    <span className="inline-flex items-center justify-center w-6 h-6 md:w-8 md:h-8 rounded-full bg-muted text-muted-foreground font-bold mr-2 md:mr-4 shrink-0 text-xs md:text-sm">
                       {option.id.toUpperCase()}
                     </span>
-                    <span className="text-foreground leading-snug">{option.text}</span>
+                    <span className="text-foreground leading-tight line-clamp-3">{option.text}</span>
                   </Button>
                 </motion.div>
               ))}
@@ -97,9 +97,9 @@ export function QuizQuestion({
       </div>
 
       {/* Time estimate */}
-      <div className="text-center mt-8">
-        <p className="text-xs text-muted-foreground">
-          ⏱️ Tempo restante: ~{Math.ceil((totalQuestions - questionNumber + 1) * 0.25)} min
+      <div className="text-center mt-4 md:mt-8">
+        <p className="text-[10px] md:text-xs text-muted-foreground">
+          ⏱️ ~{Math.ceil((totalQuestions - questionNumber + 1) * 0.25)} min restantes
         </p>
       </div>
     </div>
