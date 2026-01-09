@@ -74,7 +74,7 @@ export const quizQuestions = [
   },
   {
     id: 7,
-    question: "Se um método comprovado pudesse transformar sua vida romântica em 30 dias, quanto você estaria disposto a investir?",
+    question: "Para resolver definitivamente sua vida romântica e se tornar irresistível, quanto você investiria?",
     options: [
       { id: "a", text: "Até R$ 30 - o mínimo possível", points: { gentleman: 1, estrategista: 1, diamante: 1, guerreiro: 1 } },
       { id: "b", text: "Entre R$ 30 e R$ 50 - algo acessível", points: { gentleman: 2, estrategista: 2, diamante: 2, guerreiro: 2 } },
