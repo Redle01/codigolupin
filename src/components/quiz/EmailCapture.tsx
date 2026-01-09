@@ -84,11 +84,11 @@ export function EmailCapture({
             Para garantir que você receba:
           </p>
           <ul className="space-y-3 md:space-y-3">
-            {[
+          {[
               "Sua análise completa e personalizada",
               "Plano específico de transformação para seu tipo",
-              "Bônus exclusivo: \"As 7 Frases que Desarmam Qualquer Mulher\"",
-              "Convite VIP para masterclass \"Dominando o Carnaval 2026\"",
+              "Bônus exclusivo: \"As 7 Frases que Desarmam Qualquer Mulher\" (R$67)",
+              "Bônus exclusivo: \"Dominando o Carnaval 2026\" (R$97) — Liberado por tempo limitado",
             ].map((benefit, index) => (
               <motion.li
                 key={index}
