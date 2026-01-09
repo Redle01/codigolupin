@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuiz } from "@/hooks/useQuiz";
+import { useFunnelMetrics } from "@/hooks/useFunnelMetrics";
 import { quizConfig } from "@/lib/quizConfig";
 import { QuizLanding } from "./QuizLanding";
 import { QuizQuestion } from "./QuizQuestion";
@@ -9,6 +10,7 @@ import { QuizConfig } from "./QuizConfig";
 
 const STORAGE_KEY_CHECKOUT = "quiz_checkout_url";
 const STORAGE_KEY_WEBHOOK = "quiz_webhook_url";
+const VISIT_TRACKED_KEY = "quiz_visit_tracked";
 
 // Detect if running inside Lovable editor (iframe)
 const isLovableEditor = () => {
@@ -33,6 +35,9 @@ export function Quiz() {
     results,
   } = useQuiz();
 
+  const { metrics, trackVisit, trackPageView, resetMetrics, getDropoffRate, getConversionRate } = useFunnelMetrics();
+  const lastTrackedPage = useRef<string | null>(null);
+
   // Persisted config
   const [checkoutUrl, setCheckoutUrl] = useState(() => {
     if (typeof window !== "undefined") {
@@ -56,6 +61,38 @@ export function Quiz() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_WEBHOOK, webhookUrl);
   }, [webhookUrl]);
+
+  // Track visit only once per session
+  useEffect(() => {
+    const visitTracked = sessionStorage.getItem(VISIT_TRACKED_KEY);
+    if (!visitTracked) {
+      trackVisit();
+      sessionStorage.setItem(VISIT_TRACKED_KEY, "true");
+    }
+  }, [trackVisit]);
+
+  // Track page views
+  useEffect(() => {
+    let currentPage: string;
+    
+    if (state.currentStep === "landing") {
+      currentPage = "landing";
+    } else if (state.currentStep === "questions") {
+      currentPage = `question${state.currentQuestion + 1}`;
+    } else if (state.currentStep === "email") {
+      currentPage = "email";
+    } else if (state.currentStep === "result") {
+      currentPage = "result";
+    } else {
+      return;
+    }
+
+    // Only track if page changed
+    if (lastTrackedPage.current !== currentPage) {
+      trackPageView(currentPage as keyof typeof metrics.pageViews);
+      lastTrackedPage.current = currentPage;
+    }
+  }, [state.currentStep, state.currentQuestion, trackPageView]);
 
   const handleEmailSubmit = async () => {
     return submitEmail(webhookUrl);
@@ -110,6 +147,10 @@ export function Quiz() {
           webhookUrl={webhookUrl}
           onCheckoutUrlChange={setCheckoutUrl}
           onWebhookUrlChange={setWebhookUrl}
+          metrics={metrics}
+          onResetMetrics={resetMetrics}
+          getDropoffRate={getDropoffRate}
+          getConversionRate={getConversionRate}
         />
       )}
     </div>

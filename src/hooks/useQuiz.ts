@@ -1,5 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { quizQuestions, quizResults, ResultType, quizConfig } from "@/lib/quizConfig";
+
+const QUIZ_STATE_STORAGE_KEY = "quiz_user_state";
 
 export interface QuizState {
   currentStep: "landing" | "questions" | "email" | "result";
@@ -11,14 +13,43 @@ export interface QuizState {
 }
 
 export function useQuiz() {
-  const [state, setState] = useState<QuizState>({
-    currentStep: "landing",
-    currentQuestion: 0,
-    answers: {},
-    email: "",
-    result: null,
-    isSubmitting: false,
+  const [state, setState] = useState<QuizState>(() => {
+    // Restore state from localStorage on initial load
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(QUIZ_STATE_STORAGE_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          return {
+            ...parsed,
+            isSubmitting: false, // Always reset submitting state
+          };
+        } catch {
+          // If parsing fails, use default state
+        }
+      }
+    }
+    return {
+      currentStep: "landing",
+      currentQuestion: 0,
+      answers: {},
+      email: "",
+      result: null,
+      isSubmitting: false,
+    };
   });
+
+  // Persist state to localStorage whenever it changes
+  useEffect(() => {
+    const stateToStore = {
+      currentStep: state.currentStep,
+      currentQuestion: state.currentQuestion,
+      answers: state.answers,
+      email: state.email,
+      result: state.result,
+    };
+    localStorage.setItem(QUIZ_STATE_STORAGE_KEY, JSON.stringify(stateToStore));
+  }, [state.currentStep, state.currentQuestion, state.answers, state.email, state.result]);
 
   const startQuiz = useCallback(() => {
     setState((prev) => ({ ...prev, currentStep: "questions", currentQuestion: 0 }));

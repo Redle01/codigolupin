@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Settings, Link, Webhook, Check, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,19 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
+import { FunnelMetricsPanel } from "./FunnelMetrics";
+import { FunnelMetrics as FunnelMetricsType } from "@/hooks/useFunnelMetrics";
 
 interface QuizConfigProps {
   checkoutUrl: string;
   webhookUrl: string;
   onCheckoutUrlChange: (url: string) => void;
   onWebhookUrlChange: (url: string) => void;
+  metrics: FunnelMetricsType;
+  onResetMetrics: () => void;
+  getDropoffRate: (from: keyof FunnelMetricsType["pageViews"], to: keyof FunnelMetricsType["pageViews"]) => number;
+  getConversionRate: (from: keyof FunnelMetricsType["pageViews"], to: keyof FunnelMetricsType["pageViews"]) => number;
 }
 
 export function QuizConfig({
@@ -25,6 +32,10 @@ export function QuizConfig({
   webhookUrl,
   onCheckoutUrlChange,
   onWebhookUrlChange,
+  metrics,
+  onResetMetrics,
+  getDropoffRate,
+  getConversionRate,
 }: QuizConfigProps) {
   const [testingWebhook, setTestingWebhook] = useState(false);
   const [webhookStatus, setWebhookStatus] = useState<"idle" | "success" | "error">("idle");
@@ -156,7 +167,7 @@ export function QuizConfig({
           </div>
 
           {/* Info */}
-          <div className="bg-muted/50 rounded-lg p-4 mt-8">
+          <div className="bg-muted/50 rounded-lg p-4">
             <h4 className="text-sm font-medium text-foreground mb-2">
               💡 Dicas de Integração
             </h4>
@@ -166,6 +177,16 @@ export function QuizConfig({
               <li>• Teste o webhook antes de rodar tráfego</li>
             </ul>
           </div>
+
+          <Separator className="my-6" />
+
+          {/* Funnel Metrics */}
+          <FunnelMetricsPanel
+            metrics={metrics}
+            onReset={onResetMetrics}
+            getDropoffRate={getDropoffRate}
+            getConversionRate={getConversionRate}
+          />
         </div>
       </SheetContent>
     </Sheet>
