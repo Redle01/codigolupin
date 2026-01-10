@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { BarChart3, Users, TrendingDown, RotateCcw, ArrowRight } from "lucide-react";
+import { BarChart3, Users, TrendingDown, RotateCcw, ArrowDown, Target, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FunnelMetrics as FunnelMetricsType } from "@/hooks/useFunnelMetrics";
 import {
@@ -21,23 +21,36 @@ interface FunnelMetricsProps {
   getConversionRate: (from: keyof FunnelMetricsType["pageViews"], to: keyof FunnelMetricsType["pageViews"]) => number;
 }
 
-const funnelSteps: { key: keyof FunnelMetricsType["pageViews"]; label: string }[] = [
-  { key: "landing", label: "Início" },
-  { key: "question1", label: "Pergunta 1" },
-  { key: "question2", label: "Pergunta 2" },
-  { key: "question3", label: "Pergunta 3" },
-  { key: "question4", label: "Pergunta 4" },
-  { key: "question5", label: "Pergunta 5" },
-  { key: "question6", label: "Pergunta 6" },
-  { key: "email", label: "Captura Email" },
-  { key: "question7", label: "Pergunta 7" },
-  { key: "question8", label: "Pergunta 8" },
-  { key: "result", label: "Resultado" },
+const funnelSteps: { key: keyof FunnelMetricsType["pageViews"]; label: string; preview: string; icon: string }[] = [
+  { key: "landing", label: "Início", preview: "Página inicial do quiz", icon: "🏠" },
+  { key: "question1", label: "Pergunta 1", preview: "Identidade secreta", icon: "🎭" },
+  { key: "question2", label: "Pergunta 2", preview: "Arma de sedução", icon: "💫" },
+  { key: "question3", label: "Pergunta 3", preview: "Cenário perfeito", icon: "🌙" },
+  { key: "question4", label: "Pergunta 4", preview: "Reação dela", icon: "💬" },
+  { key: "question5", label: "Pergunta 5", preview: "Situação difícil", icon: "🎯" },
+  { key: "question6", label: "Pergunta 6", preview: "Objetivo final", icon: "💎" },
+  { key: "email", label: "Captura Email", preview: "Formulário de email", icon: "📧" },
+  { key: "question7", label: "Pergunta 7", preview: "Âncora de preço", icon: "💰" },
+  { key: "question8", label: "Pergunta 8", preview: "Compromisso", icon: "🤝" },
+  { key: "result", label: "Resultado", preview: "Perfil + CTA final", icon: "🏆" },
 ];
 
 export function FunnelMetricsPanel({ metrics, onReset, getDropoffRate, getConversionRate }: FunnelMetricsProps) {
   const maxViews = Math.max(...Object.values(metrics.pageViews), 1);
   const overallConversion = getConversionRate("landing", "result");
+  const emailConversion = getConversionRate("landing", "email");
+
+  // Find the biggest dropoff point
+  let biggestDropoff = { from: "", to: "", rate: 0 };
+  funnelSteps.forEach((step, index) => {
+    const nextStep = funnelSteps[index + 1];
+    if (nextStep) {
+      const dropoff = getDropoffRate(step.key, nextStep.key);
+      if (dropoff > biggestDropoff.rate) {
+        biggestDropoff = { from: step.label, to: nextStep.label, rate: dropoff };
+      }
+    }
+  });
 
   return (
     <div className="space-y-6">
@@ -72,57 +85,106 @@ export function FunnelMetricsPanel({ metrics, onReset, getDropoffRate, getConver
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="bg-muted/50 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
             <Users className="w-3 h-3" />
-            Visitas Totais
+            Visitas
           </div>
-          <p className="text-2xl font-bold text-foreground">{metrics.totalVisits}</p>
+          <p className="text-xl font-bold text-foreground">{metrics.totalVisits}</p>
         </div>
         <div className="bg-muted/50 rounded-lg p-3">
-          <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-            <TrendingDown className="w-3 h-3" />
-            Conversão Total
+          <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
+            <Target className="w-3 h-3" />
+            Emails
           </div>
-          <p className="text-2xl font-bold text-primary">{overallConversion}%</p>
+          <p className="text-xl font-bold text-primary">{emailConversion}%</p>
+        </div>
+        <div className="bg-muted/50 rounded-lg p-3">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
+            <TrendingDown className="w-3 h-3" />
+            Conversão
+          </div>
+          <p className="text-xl font-bold text-green-500">{overallConversion}%</p>
         </div>
       </div>
 
+      {/* Biggest Dropoff Alert */}
+      {biggestDropoff.rate > 20 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 flex items-start gap-2"
+        >
+          <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+          <div>
+            <p className="text-xs font-medium text-destructive">Maior ponto de abandono</p>
+            <p className="text-xs text-muted-foreground">
+              {biggestDropoff.from} → {biggestDropoff.to}: <span className="text-destructive font-semibold">{biggestDropoff.rate}%</span> de abandono
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Funnel Visualization */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
           Fluxo do Funil
         </p>
-        <div className="space-y-1">
+        <div className="space-y-2">
           {funnelSteps.map((step, index) => {
             const views = metrics.pageViews[step.key];
             const barWidth = maxViews > 0 ? (views / maxViews) * 100 : 0;
             const nextStep = funnelSteps[index + 1];
             const dropoff = nextStep ? getDropoffRate(step.key, nextStep.key) : null;
+            const isHighDropoff = dropoff !== null && dropoff > 30;
 
             return (
               <div key={step.key}>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 text-xs text-muted-foreground truncate">
-                    {step.label}
+                {/* Step Card */}
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.03 }}
+                  className="bg-muted/30 rounded-lg p-2.5 border border-border/50 hover:border-primary/30 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Icon & Preview */}
+                    <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 text-lg shrink-0">
+                      {step.icon}
+                    </div>
+                    
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{step.label}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">{step.preview}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-lg font-bold text-foreground">{views}</p>
+                          <p className="text-[10px] text-muted-foreground">usuários</p>
+                        </div>
+                      </div>
+                      
+                      {/* Progress Bar */}
+                      <div className="mt-2 h-1.5 bg-muted/50 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${barWidth}%` }}
+                          transition={{ duration: 0.5, delay: index * 0.05 }}
+                          className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1 h-6 bg-muted/30 rounded overflow-hidden relative">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${barWidth}%` }}
-                      transition={{ duration: 0.5, delay: index * 0.05 }}
-                      className="h-full bg-gradient-to-r from-primary to-primary/70 rounded"
-                    />
-                    <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-foreground">
-                      {views}
-                    </span>
-                  </div>
-                </div>
+                </motion.div>
+
+                {/* Dropoff Indicator */}
                 {dropoff !== null && dropoff > 0 && (
-                  <div className="flex items-center gap-2 ml-24 my-0.5">
-                    <ArrowRight className="w-3 h-3 text-muted-foreground/50" />
-                    <span className="text-[10px] text-destructive/80">
+                  <div className="flex items-center justify-center gap-1.5 py-1">
+                    <ArrowDown className={`w-3 h-3 ${isHighDropoff ? 'text-destructive' : 'text-muted-foreground/50'}`} />
+                    <span className={`text-[10px] ${isHighDropoff ? 'text-destructive font-medium' : 'text-muted-foreground'}`}>
                       -{dropoff}% abandono
                     </span>
                   </div>
@@ -134,9 +196,11 @@ export function FunnelMetricsPanel({ metrics, onReset, getDropoffRate, getConver
       </div>
 
       {/* Last Updated */}
-      <p className="text-[10px] text-muted-foreground text-center">
-        Última atualização: {new Date(metrics.lastUpdated).toLocaleString("pt-BR")}
-      </p>
+      <div className="pt-2 border-t border-border/50">
+        <p className="text-[10px] text-muted-foreground text-center">
+          Atualizado em: {new Date(metrics.lastUpdated).toLocaleString("pt-BR")}
+        </p>
+      </div>
     </div>
   );
 }
