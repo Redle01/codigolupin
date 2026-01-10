@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { quizQuestions, quizResults, ResultType, quizConfig } from "@/lib/quizConfig";
 
 const QUIZ_STATE_STORAGE_KEY = "quiz_user_state";
+const SESSION_ACTIVE_KEY = "quiz_session_active";
 
 export interface QuizState {
   currentStep: "landing" | "questions" | "email" | "result";
@@ -12,31 +13,44 @@ export interface QuizState {
   isSubmitting: boolean;
 }
 
+const getInitialState = (): QuizState => ({
+  currentStep: "landing",
+  currentQuestion: 0,
+  answers: {},
+  email: "",
+  result: null,
+  isSubmitting: false,
+});
+
 export function useQuiz() {
   const [state, setState] = useState<QuizState>(() => {
-    // Restore state from localStorage on initial load
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(QUIZ_STATE_STORAGE_KEY);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          return {
-            ...parsed,
-            isSubmitting: false, // Always reset submitting state
-          };
-        } catch {
-          // If parsing fails, use default state
+      // Check if this is a page refresh (session still active) or a new entry
+      const isSessionActive = sessionStorage.getItem(SESSION_ACTIVE_KEY);
+      
+      if (isSessionActive) {
+        // This is a page refresh - restore state from localStorage
+        const stored = localStorage.getItem(QUIZ_STATE_STORAGE_KEY);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            return {
+              ...parsed,
+              isSubmitting: false, // Always reset submitting state
+            };
+          } catch {
+            // If parsing fails, use default state
+          }
         }
+      } else {
+        // This is a new entry - clear any previous state and start fresh
+        localStorage.removeItem(QUIZ_STATE_STORAGE_KEY);
       }
+      
+      // Mark session as active for refresh detection
+      sessionStorage.setItem(SESSION_ACTIVE_KEY, "true");
     }
-    return {
-      currentStep: "landing",
-      currentQuestion: 0,
-      answers: {},
-      email: "",
-      result: null,
-      isSubmitting: false,
-    };
+    return getInitialState();
   });
 
   // Persist state to localStorage whenever it changes
