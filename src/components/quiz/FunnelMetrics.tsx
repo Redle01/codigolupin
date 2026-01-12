@@ -1,5 +1,6 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { BarChart3, Users, TrendingDown, RotateCcw, ArrowDown, Target, AlertTriangle } from "lucide-react";
+import { BarChart3, Users, TrendingDown, RotateCcw, ArrowDown, Target, AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FunnelMetrics as FunnelMetricsType } from "@/hooks/useFunnelMetrics";
 import {
@@ -17,6 +18,7 @@ import {
 interface FunnelMetricsProps {
   metrics: FunnelMetricsType;
   onReset: () => void;
+  onRefresh: () => void;
   getDropoffRate: (from: keyof FunnelMetricsType["pageViews"], to: keyof FunnelMetricsType["pageViews"]) => number;
   getConversionRate: (from: keyof FunnelMetricsType["pageViews"], to: keyof FunnelMetricsType["pageViews"]) => number;
 }
@@ -35,10 +37,31 @@ const funnelSteps: { key: keyof FunnelMetricsType["pageViews"]; label: string; p
   { key: "result", label: "Resultado", preview: "Perfil + CTA final", icon: "🏆" },
 ];
 
-export function FunnelMetricsPanel({ metrics, onReset, getDropoffRate, getConversionRate }: FunnelMetricsProps) {
+export function FunnelMetricsPanel({ metrics, onReset, onRefresh, getDropoffRate, getConversionRate }: FunnelMetricsProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  
   const maxViews = Math.max(...Object.values(metrics.pageViews), 1);
   const overallConversion = getConversionRate("landing", "result");
   const emailConversion = getConversionRate("landing", "email");
+  const uniqueVisitors = Object.keys(metrics.visitors).length;
+
+  // Auto-refresh every 5 seconds when enabled
+  useEffect(() => {
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      onRefresh();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [autoRefresh, onRefresh]);
+
+  const handleManualRefresh = () => {
+    setIsRefreshing(true);
+    onRefresh();
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   // Find the biggest dropoff point
   let biggestDropoff = { from: "", to: "", rate: 0 };
@@ -60,50 +83,81 @@ export function FunnelMetricsPanel({ metrics, onReset, getDropoffRate, getConver
           <BarChart3 className="w-5 h-5 text-primary" />
           <h3 className="text-lg font-semibold text-foreground">Métricas do Funil</h3>
         </div>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
-              <RotateCcw className="w-4 h-4 mr-1" />
-              Resetar
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="bg-card border-border">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Resetar Métricas?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Esta ação irá zerar todas as métricas do funil. Os dados não podem ser recuperados.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={onReset} className="bg-destructive hover:bg-destructive/90">
-                Confirmar Reset
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleManualRefresh}
+            className="text-muted-foreground hover:text-primary"
+          >
+            <RefreshCw className={`w-4 h-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Resetar
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-card border-border">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Resetar Métricas?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação irá zerar todas as métricas do funil. Os dados não podem ser recuperados.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={onReset} className="bg-destructive hover:bg-destructive/90">
+                  Confirmar Reset
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+      
+      {/* Auto-refresh indicator */}
+      <div className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
+        <span className="text-xs text-muted-foreground">Atualização automática</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setAutoRefresh(!autoRefresh)}
+          className={`text-xs h-6 px-2 ${autoRefresh ? 'text-green-500' : 'text-muted-foreground'}`}
+        >
+          {autoRefresh ? '● Ativo' : '○ Pausado'}
+        </Button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div className="bg-muted/50 rounded-lg p-3">
           <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
             <Users className="w-3 h-3" />
-            Visitas
+            Visitas Totais
           </div>
           <p className="text-xl font-bold text-foreground">{metrics.totalVisits}</p>
         </div>
         <div className="bg-muted/50 rounded-lg p-3">
           <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
+            <Users className="w-3 h-3" />
+            Visitantes Únicos
+          </div>
+          <p className="text-xl font-bold text-foreground">{uniqueVisitors}</p>
+        </div>
+        <div className="bg-muted/50 rounded-lg p-3">
+          <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
             <Target className="w-3 h-3" />
-            Emails
+            Taxa de Emails
           </div>
           <p className="text-xl font-bold text-primary">{emailConversion}%</p>
         </div>
         <div className="bg-muted/50 rounded-lg p-3">
           <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
             <TrendingDown className="w-3 h-3" />
-            Conversão
+            Conversão Final
           </div>
           <p className="text-xl font-bold text-green-500">{overallConversion}%</p>
         </div>
