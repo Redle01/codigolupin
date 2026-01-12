@@ -35,7 +35,7 @@ export function Quiz() {
     results,
   } = useQuiz();
 
-  const { metrics, trackVisit, trackPageView, resetMetrics, getDropoffRate, getConversionRate } = useFunnelMetrics();
+  const { metrics, trackVisit, trackPageView, resetMetrics, refreshMetrics, getDropoffRate, getConversionRate } = useFunnelMetrics();
   const lastTrackedPage = useRef<string | null>(null);
 
   // Persisted config
@@ -71,7 +71,7 @@ export function Quiz() {
     }
   }, [trackVisit]);
 
-  // Track page views
+  // Track page views - always track when step/question changes
   useEffect(() => {
     let currentPage: string;
     
@@ -87,12 +87,10 @@ export function Quiz() {
       return;
     }
 
-    // Only track if page changed
-    if (lastTrackedPage.current !== currentPage) {
-      trackPageView(currentPage as keyof typeof metrics.pageViews);
-      lastTrackedPage.current = currentPage;
-    }
-  }, [state.currentStep, state.currentQuestion, trackPageView]);
+    // Track page view - the hook handles deduplication per visitor session
+    trackPageView(currentPage as keyof typeof metrics.pageViews);
+    lastTrackedPage.current = currentPage;
+  }, [state.currentStep, state.currentQuestion, trackPageView, metrics.pageViews]);
 
   const handleEmailSubmit = async () => {
     return submitEmail(webhookUrl);
@@ -149,6 +147,7 @@ export function Quiz() {
           onWebhookUrlChange={setWebhookUrl}
           metrics={metrics}
           onResetMetrics={resetMetrics}
+          onRefreshMetrics={refreshMetrics}
           getDropoffRate={getDropoffRate}
           getConversionRate={getConversionRate}
         />

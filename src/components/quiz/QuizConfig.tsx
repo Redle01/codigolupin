@@ -23,6 +23,7 @@ interface QuizConfigProps {
   onWebhookUrlChange: (url: string) => void;
   metrics: FunnelMetricsType;
   onResetMetrics: () => void;
+  onRefreshMetrics: () => void;
   getDropoffRate: (from: keyof FunnelMetricsType["pageViews"], to: keyof FunnelMetricsType["pageViews"]) => number;
   getConversionRate: (from: keyof FunnelMetricsType["pageViews"], to: keyof FunnelMetricsType["pageViews"]) => number;
 }
@@ -34,6 +35,7 @@ export function QuizConfig({
   onWebhookUrlChange,
   metrics,
   onResetMetrics,
+  onRefreshMetrics,
   getDropoffRate,
   getConversionRate,
 }: QuizConfigProps) {
@@ -197,6 +199,7 @@ export function QuizConfig({
             <FunnelMetricsPanel
               metrics={metrics}
               onReset={onResetMetrics}
+              onRefresh={onRefreshMetrics}
               getDropoffRate={getDropoffRate}
               getConversionRate={getConversionRate}
             />
