@@ -55,7 +55,7 @@ export function LeadsTable() {
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
-    fetchLeads({ page: 1, search, resultType: resultType === "all" ? "" : resultType });
+    fetchLeads({ page: 1, search, resultType });
   }, []);
 
   const handleSearch = () => {
@@ -64,7 +64,7 @@ export function LeadsTable() {
 
   const handleFilterChange = (value: string) => {
     setResultType(value);
-    fetchLeads({ page: 1, search, resultType: value === "all" ? "" : value });
+    fetchLeads({ page: 1, search, resultType: value });
   };
 
   const handlePageChange = (newPage: number) => {
