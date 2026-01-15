@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Sparkles, Target, CheckCircle } from "lucide-react";
+import { ParticleBackground } from "./ParticleBackground";
 
 interface QuizLoadingProps {
   onComplete: () => void;
@@ -63,9 +64,12 @@ export function QuizLoading({ onComplete }: QuizLoadingProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen bg-background flex items-center justify-center p-4"
+      className="min-h-screen bg-background flex items-center justify-center p-4 relative"
     >
-      <div className="w-full max-w-md text-center">
+      {/* Particle effects */}
+      <ParticleBackground />
+
+      <div className="w-full max-w-md text-center relative z-10">
         {/* Animated Icon */}
         <motion.div
           className="mb-8 flex justify-center"
