@@ -41,13 +41,20 @@ export function QuizQuestion({
         </div>
 
         {/* Progress bar */}
-        <div className="h-2 md:h-2 bg-muted rounded-full overflow-hidden">
+        <div className="relative h-2.5 md:h-3 bg-muted/50 rounded-full overflow-hidden border border-border/30">
           <motion.div
-            className="h-full bg-gradient-gold"
+            className="h-full bg-gradient-gold relative overflow-hidden shadow-gold"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-          />
+            transition={{ type: "spring", stiffness: 80, damping: 18 }}
+          >
+            {/* Shimmer effect */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-cream/25 to-transparent"
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            />
+          </motion.div>
         </div>
       </div>
 

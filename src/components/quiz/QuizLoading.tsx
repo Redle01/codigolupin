@@ -63,7 +63,7 @@ export function QuizLoading({ onComplete }: QuizLoadingProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4"
+      className="min-h-screen bg-background flex items-center justify-center p-4"
     >
       <div className="w-full max-w-md text-center">
         {/* Animated Icon */}
@@ -74,12 +74,19 @@ export function QuizLoading({ onComplete }: QuizLoadingProps) {
           transition={{ duration: 0.3 }}
         >
           <div className="relative">
+            {/* Glow effect */}
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-600 rounded-full blur-xl opacity-50"
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
+              className="absolute inset-0 bg-gradient-gold rounded-full blur-xl opacity-40"
+              animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0.6, 0.4] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             />
-            <div className="relative bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-full">
+            {/* Secondary burgundy glow */}
+            <motion.div
+              className="absolute inset-0 bg-burgundy rounded-full blur-2xl opacity-20"
+              animate={{ scale: [1.2, 1, 1.2], opacity: [0.2, 0.3, 0.2] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+            />
+            <div className="relative bg-gradient-gold p-6 rounded-full shadow-gold-lg">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentStep}
@@ -88,7 +95,7 @@ export function QuizLoading({ onComplete }: QuizLoadingProps) {
                   exit={{ opacity: 0, rotate: 180, scale: 0.5 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <CurrentIcon className="w-12 h-12 text-white" />
+                  <CurrentIcon className="w-12 h-12 text-background" />
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -103,32 +110,41 @@ export function QuizLoading({ onComplete }: QuizLoadingProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="text-xl font-medium text-white mb-8"
+            className="text-xl font-medium text-foreground mb-8"
           >
             {loadingSteps[currentStep].text}
           </motion.p>
         </AnimatePresence>
 
         {/* Progress Bar */}
-        <div className="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+        <div className="relative w-full h-2.5 bg-muted/50 rounded-full overflow-hidden border border-border/30">
           <motion.div
-            className="h-full bg-gradient-to-r from-amber-500 to-orange-600"
+            className="h-full bg-gradient-gold relative overflow-hidden shadow-gold"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.1 }}
-          />
+            transition={{ type: "spring", stiffness: 100, damping: 20 }}
+          >
+            {/* Shimmer effect */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-cream/30 to-transparent"
+              animate={{ x: ["-100%", "200%"] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            />
+          </motion.div>
         </div>
 
         {/* Step Indicators */}
-        <div className="flex justify-center gap-2 mt-6">
+        <div className="flex justify-center gap-3 mt-6">
           {loadingSteps.map((_, index) => (
             <motion.div
               key={index}
-              className={`w-2 h-2 rounded-full transition-colors duration-300 ${
-                index <= currentStep ? "bg-amber-500" : "bg-gray-600"
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                index <= currentStep 
+                  ? "bg-primary shadow-gold" 
+                  : "bg-muted-foreground/30"
               }`}
-              animate={index === currentStep ? { scale: [1, 1.3, 1] } : {}}
-              transition={{ duration: 0.5, repeat: index === currentStep ? Infinity : 0 }}
+              animate={index === currentStep ? { scale: [1, 1.4, 1] } : {}}
+              transition={{ duration: 0.6, repeat: index === currentStep ? Infinity : 0 }}
             />
           ))}
         </div>
