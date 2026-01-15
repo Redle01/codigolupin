@@ -178,14 +178,39 @@ export function useQuiz() {
     const checkoutUrl = quizConfig.checkoutUrl;
     if (!checkoutUrl) return;
     
-    const url = new URL(checkoutUrl);
-    if (state.email) {
-      url.searchParams.set("email", state.email);
+    // Allowlist of permitted checkout domains
+    const ALLOWED_CHECKOUT_DOMAINS = [
+      'pay.hotmart.com',
+      'app.hotmart.com',
+      'checkout.hotmart.com',
+    ];
+    
+    try {
+      const url = new URL(checkoutUrl);
+      
+      // Validate domain is in allowlist
+      if (!ALLOWED_CHECKOUT_DOMAINS.includes(url.hostname)) {
+        console.error('Invalid checkout domain:', url.hostname);
+        return;
+      }
+      
+      // Require HTTPS
+      if (url.protocol !== 'https:') {
+        console.error('Checkout URL must use HTTPS');
+        return;
+      }
+      
+      if (state.email) {
+        url.searchParams.set("email", state.email);
+      }
+      if (state.result) {
+        url.searchParams.set("profile", state.result);
+      }
+      
+      window.location.href = url.toString();
+    } catch (error) {
+      console.error('Invalid checkout URL:', error);
     }
-    if (state.result) {
-      url.searchParams.set("profile", state.result);
-    }
-    window.location.href = url.toString();
   }, [state.email, state.result]);
 
   return {
