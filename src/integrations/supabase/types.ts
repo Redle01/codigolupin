@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      quiz_funnel_events: {
+        Row: {
+          created_at: string | null
+          id: string
+          page_key: string
+          visitor_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          page_key: string
+          visitor_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          page_key?: string
+          visitor_id?: string
+        }
+        Relationships: []
+      }
+      quiz_leads: {
+        Row: {
+          answers: Json | null
+          created_at: string | null
+          email: string
+          id: string
+          result_type: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          answers?: Json | null
+          created_at?: string | null
+          email: string
+          id?: string
+          result_type?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          answers?: Json | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          result_type?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

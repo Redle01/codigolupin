@@ -1,11 +1,13 @@
 import { useState, useCallback, useEffect } from "react";
 import { quizQuestions, quizResults, ResultType, quizConfig } from "@/lib/quizConfig";
+import { supabase } from "@/integrations/supabase/client";
+import { getOrCreateVisitorId } from "./useFunnelMetrics";
 
 const QUIZ_STATE_STORAGE_KEY = "quiz_user_state";
 const SESSION_ACTIVE_KEY = "quiz_session_active";
 
 export interface QuizState {
-  currentStep: "landing" | "questions" | "email" | "result";
+  currentStep: "landing" | "questions" | "email" | "loading" | "result";
   currentQuestion: number;
   answers: Record<number, string>;
   email: string;
@@ -79,14 +81,18 @@ export function useQuiz() {
         return { ...prev, answers: newAnswers, currentStep: "email" };
       }
       
-      // If all questions answered, calculate result
+      // If all questions answered, show loading then result
       if (nextQuestion >= quizQuestions.length) {
         const result = calculateResult(newAnswers);
-        return { ...prev, answers: newAnswers, result, currentStep: "result" };
+        return { ...prev, answers: newAnswers, result, currentStep: "loading" };
       }
       
       return { ...prev, answers: newAnswers, currentQuestion: nextQuestion };
     });
+  }, []);
+
+  const completeLoading = useCallback(() => {
+    setState((prev) => ({ ...prev, currentStep: "result" }));
   }, []);
 
   const continueAfterEmail = useCallback(() => {
@@ -109,36 +115,69 @@ export function useQuiz() {
     setState((prev) => ({ ...prev, email }));
   }, []);
 
-  const submitEmail = useCallback(async (webhookUrl: string) => {
+  const submitEmail = useCallback(async () => {
     if (!state.email) return false;
     
     setState((prev) => ({ ...prev, isSubmitting: true }));
     
     try {
-      if (webhookUrl) {
-        await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          mode: "no-cors",
-          body: JSON.stringify({
-            email: state.email,
-            answers: state.answers,
-            timestamp: new Date().toISOString(),
-            source: "quiz-arsene-lupin",
-          }),
-        });
+      const visitorId = getOrCreateVisitorId();
+      
+      const { error } = await supabase.functions.invoke("quiz-submit-email", {
+        body: {
+          email: state.email,
+          visitor_id: visitorId,
+          answers: state.answers,
+        },
+      });
+
+      if (error) {
+        console.error("Error submitting email:", error);
+      } else {
+        console.log("Email submitted successfully");
       }
       
       setState((prev) => ({ ...prev, isSubmitting: false }));
       return true;
     } catch (error) {
-      console.error("Webhook error:", error);
+      console.error("Error submitting email:", error);
       setState((prev) => ({ ...prev, isSubmitting: false }));
       return true; // Continue anyway
     }
   }, [state.email, state.answers]);
 
-  const redirectToCheckout = useCallback((checkoutUrl: string) => {
+  // Update result type after quiz completion
+  const updateResultType = useCallback(async () => {
+    if (!state.email || !state.result) return;
+    
+    try {
+      const visitorId = getOrCreateVisitorId();
+      
+      // Update the lead with result type
+      await supabase.functions.invoke("quiz-submit-email", {
+        body: {
+          email: state.email,
+          visitor_id: visitorId,
+          result_type: state.result,
+          answers: state.answers,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating result type:", error);
+    }
+  }, [state.email, state.result, state.answers]);
+
+  // Call updateResultType when result is calculated
+  useEffect(() => {
+    if (state.result && state.email) {
+      updateResultType();
+    }
+  }, [state.result, state.email, updateResultType]);
+
+  const redirectToCheckout = useCallback(() => {
+    const checkoutUrl = quizConfig.checkoutUrl;
+    if (!checkoutUrl) return;
+    
     const url = new URL(checkoutUrl);
     if (state.email) {
       url.searchParams.set("email", state.email);
@@ -153,6 +192,7 @@ export function useQuiz() {
     state,
     startQuiz,
     answerQuestion,
+    completeLoading,
     continueAfterEmail,
     goBack,
     setEmail,

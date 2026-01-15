@@ -1,17 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-const METRICS_STORAGE_KEY = "quiz_funnel_metrics";
-const VISITORS_STORAGE_KEY = "quiz_funnel_visitors";
 const VISITOR_ID_KEY = "quiz_visitor_id";
-const VISITOR_PAGES_KEY = "quiz_visitor_pages";
-
-export interface VisitorData {
-  id: string;
-  firstSeen: string;
-  lastSeen: string;
-  maxPageReached: string;
-  pagesVisited: string[];
-}
 
 export interface FunnelMetrics {
   totalVisits: number;
@@ -28,7 +18,7 @@ export interface FunnelMetrics {
     question8: number;
     result: number;
   };
-  visitors: Record<string, VisitorData>;
+  uniqueVisitors: number;
   lastUpdated: string;
 }
 
@@ -47,182 +37,114 @@ const defaultMetrics: FunnelMetrics = {
     question8: 0,
     result: 0,
   },
-  visitors: {},
+  uniqueVisitors: 0,
   lastUpdated: new Date().toISOString(),
 };
-
-const pageOrder: (keyof FunnelMetrics["pageViews"])[] = [
-  "landing",
-  "question1",
-  "question2",
-  "question3",
-  "question4",
-  "question5",
-  "question6",
-  "email",
-  "question7",
-  "question8",
-  "result",
-];
 
 // Generate unique visitor ID
 function generateVisitorId(): string {
   return `v_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
-// Get or create visitor ID for current session
-function getOrCreateVisitorId(): string {
+// Get or create visitor ID - persists in localStorage to survive refreshes
+export function getOrCreateVisitorId(): string {
   if (typeof window === "undefined") return "";
   
-  let visitorId = sessionStorage.getItem(VISITOR_ID_KEY);
+  let visitorId = localStorage.getItem(VISITOR_ID_KEY);
   if (!visitorId) {
     visitorId = generateVisitorId();
-    sessionStorage.setItem(VISITOR_ID_KEY, visitorId);
+    localStorage.setItem(VISITOR_ID_KEY, visitorId);
   }
   return visitorId;
 }
 
-// Get pages already tracked for this visitor in this session
-function getTrackedPages(): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  
-  const stored = sessionStorage.getItem(VISITOR_PAGES_KEY);
-  if (stored) {
-    try {
-      return new Set(JSON.parse(stored));
-    } catch {
-      return new Set();
-    }
-  }
-  return new Set();
-}
-
-// Save tracked pages for this visitor session
-function saveTrackedPages(pages: Set<string>): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.setItem(VISITOR_PAGES_KEY, JSON.stringify([...pages]));
-}
-
 export function useFunnelMetrics() {
-  const [metrics, setMetrics] = useState<FunnelMetrics>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(METRICS_STORAGE_KEY);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          // Ensure visitors object exists (migration)
-          if (!parsed.visitors) {
-            parsed.visitors = {};
-          }
-          return parsed;
-        } catch {
-          return defaultMetrics;
-        }
-      }
-    }
-    return defaultMetrics;
-  });
+  const [metrics, setMetrics] = useState<FunnelMetrics>(defaultMetrics);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Persist metrics to localStorage
-  useEffect(() => {
-    localStorage.setItem(METRICS_STORAGE_KEY, JSON.stringify(metrics));
-  }, [metrics]);
-
-  const trackVisit = useCallback(() => {
-    setMetrics((prev) => ({
-      ...prev,
-      totalVisits: prev.totalVisits + 1,
-      lastUpdated: new Date().toISOString(),
-    }));
-  }, []);
-
-  const trackPageView = useCallback((page: keyof FunnelMetrics["pageViews"]) => {
+  // Track page view via Edge Function
+  const trackPageView = useCallback(async (page: keyof FunnelMetrics["pageViews"]) => {
     const visitorId = getOrCreateVisitorId();
-    const trackedPages = getTrackedPages();
     
-    // Check if this page was already tracked for this visitor in this session
-    if (trackedPages.has(page)) {
-      return; // Already tracked, don't count again
-    }
-    
-    // Mark page as tracked for this session
-    trackedPages.add(page);
-    saveTrackedPages(trackedPages);
-    
-    setMetrics((prev) => {
-      const now = new Date().toISOString();
-      const existingVisitor = prev.visitors[visitorId];
-      
-      // Calculate max page reached
-      const allVisitedPages = existingVisitor 
-        ? [...existingVisitor.pagesVisited, page]
-        : [page];
-      
-      let maxPageIndex = -1;
-      let maxPageReached: keyof FunnelMetrics["pageViews"] = page;
-      
-      allVisitedPages.forEach((p) => {
-        const typedPage = p as keyof FunnelMetrics["pageViews"];
-        const idx = pageOrder.indexOf(typedPage);
-        if (idx > maxPageIndex) {
-          maxPageIndex = idx;
-          maxPageReached = typedPage;
-        }
+    try {
+      const { data, error } = await supabase.functions.invoke("quiz-metrics/track", {
+        body: {
+          visitor_id: visitorId,
+          page_key: page,
+        },
       });
-      
-      const updatedVisitor: VisitorData = {
-        id: visitorId,
-        firstSeen: existingVisitor?.firstSeen || now,
-        lastSeen: now,
-        maxPageReached,
-        pagesVisited: [...new Set(allVisitedPages)],
-      };
-      
-      return {
-        ...prev,
-        pageViews: {
-          ...prev.pageViews,
-          [page]: prev.pageViews[page] + 1,
-        },
-        visitors: {
-          ...prev.visitors,
-          [visitorId]: updatedVisitor,
-        },
-        lastUpdated: now,
-      };
-    });
-  }, []);
 
-  const resetMetrics = useCallback(() => {
-    // Clear session storage as well
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem(VISITOR_ID_KEY);
-      sessionStorage.removeItem(VISITOR_PAGES_KEY);
-    }
-    
-    setMetrics({
-      ...defaultMetrics,
-      lastUpdated: new Date().toISOString(),
-    });
-  }, []);
-
-  const refreshMetrics = useCallback(() => {
-    // Force re-read from localStorage to sync with other tabs
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(METRICS_STORAGE_KEY);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (!parsed.visitors) {
-            parsed.visitors = {};
-          }
-          setMetrics(parsed);
-        } catch {
-          // Keep current state on error
-        }
+      if (error) {
+        console.error("Error tracking page view:", error);
+      } else {
+        console.log("Page view tracked:", page, data);
       }
+    } catch (error) {
+      console.error("Error tracking page view:", error);
     }
   }, []);
+
+  // Fetch metrics from server
+  const refreshMetrics = useCallback(async () => {
+    setIsLoading(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("quiz-metrics/stats");
+
+      if (error) {
+        console.error("Error fetching metrics:", error);
+        return;
+      }
+
+      if (data) {
+        setMetrics({
+          totalVisits: data.pageViews?.landing || 0,
+          pageViews: data.pageViews || defaultMetrics.pageViews,
+          uniqueVisitors: data.uniqueVisitors || 0,
+          lastUpdated: data.lastUpdated || new Date().toISOString(),
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching metrics:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Reset all metrics
+  const resetMetrics = useCallback(async () => {
+    setIsLoading(true);
+    
+    try {
+      const { error } = await supabase.functions.invoke("quiz-metrics/reset", {
+        method: "DELETE",
+      });
+
+      if (error) {
+        console.error("Error resetting metrics:", error);
+        return;
+      }
+
+      // Clear local visitor ID to start fresh
+      if (typeof window !== "undefined") {
+        localStorage.removeItem(VISITOR_ID_KEY);
+      }
+
+      setMetrics({
+        ...defaultMetrics,
+        lastUpdated: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Error resetting metrics:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    refreshMetrics();
+  }, [refreshMetrics]);
 
   const getDropoffRate = useCallback((fromPage: keyof FunnelMetrics["pageViews"], toPage: keyof FunnelMetrics["pageViews"]) => {
     const fromViews = metrics.pageViews[fromPage];
@@ -238,49 +160,13 @@ export function useFunnelMetrics() {
     return Math.round((toViews / fromViews) * 100);
   }, [metrics.pageViews]);
 
-  // Get stats about visitors
-  const getVisitorStats = useCallback(() => {
-    const visitors = Object.values(metrics.visitors);
-    const totalVisitors = visitors.length;
-    
-    // Count how many visitors reached each stage
-    const reachedStages: Record<keyof FunnelMetrics["pageViews"], number> = {
-      landing: 0,
-      question1: 0,
-      question2: 0,
-      question3: 0,
-      question4: 0,
-      question5: 0,
-      question6: 0,
-      email: 0,
-      question7: 0,
-      question8: 0,
-      result: 0,
-    };
-    
-    visitors.forEach((visitor) => {
-      visitor.pagesVisited.forEach((page) => {
-        const typedPage = page as keyof FunnelMetrics["pageViews"];
-        if (typedPage in reachedStages) {
-          reachedStages[typedPage]++;
-        }
-      });
-    });
-    
-    return {
-      totalVisitors,
-      reachedStages,
-    };
-  }, [metrics.visitors]);
-
   return {
     metrics,
-    trackVisit,
+    isLoading,
     trackPageView,
     resetMetrics,
     refreshMetrics,
     getDropoffRate,
     getConversionRate,
-    getVisitorStats,
   };
 }
