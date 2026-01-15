@@ -7,9 +7,20 @@ const corsHeaders = {
 };
 
 interface TrackEventRequest {
+  action: "track";
   visitor_id: string;
   page_key: string;
 }
+
+interface StatsRequest {
+  action: "stats";
+}
+
+interface ResetRequest {
+  action: "reset";
+}
+
+type RequestBody = TrackEventRequest | StatsRequest | ResetRequest;
 
 interface FunnelStats {
   pageViews: Record<string, number>;
@@ -67,12 +78,13 @@ serve(async (req: Request): Promise<Response> => {
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const url = new URL(req.url);
-    const path = url.pathname.split("/").pop();
+    // Parse request body
+    const body: RequestBody = await req.json();
+    const action = body.action;
 
-    // POST /track - Register page view event (public - no auth required)
-    if (req.method === "POST" && path === "track") {
-      const { visitor_id, page_key }: TrackEventRequest = await req.json();
+    // POST action: track - Register page view event (public - no auth required)
+    if (action === "track") {
+      const { visitor_id, page_key } = body as TrackEventRequest;
 
       if (!visitor_id || !page_key) {
         return new Response(
@@ -110,8 +122,8 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // GET /stats - Get aggregated metrics (ADMIN ONLY)
-    if (req.method === "GET" && path === "stats") {
+    // Action: stats - Get aggregated metrics (ADMIN ONLY)
+    if (action === "stats") {
       // Verify admin authentication
       const { isAdmin, error: authError } = await verifyAdmin(req, supabaseUrl, supabaseAnonKey);
       
@@ -183,8 +195,8 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // DELETE /reset - Reset all metrics (ADMIN ONLY)
-    if (req.method === "DELETE" && path === "reset") {
+    // Action: reset - Reset all metrics (ADMIN ONLY)
+    if (action === "reset") {
       // Verify admin authentication
       const { isAdmin, error: authError } = await verifyAdmin(req, supabaseUrl, supabaseAnonKey);
       
@@ -215,8 +227,8 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     return new Response(
-      JSON.stringify({ error: "Not found" }),
-      { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      JSON.stringify({ error: "Invalid action" }),
+      { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
 
   } catch (error: unknown) {

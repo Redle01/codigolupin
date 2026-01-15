@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const VISITOR_ID_KEY = "quiz_visitor_id";
@@ -67,8 +67,9 @@ export function useFunnelMetrics() {
     const visitorId = getOrCreateVisitorId();
     
     try {
-      const { data, error } = await supabase.functions.invoke("quiz-metrics/track", {
+      const { data, error } = await supabase.functions.invoke("quiz-metrics", {
         body: {
+          action: "track",
           visitor_id: visitorId,
           page_key: page,
         },
@@ -84,7 +85,7 @@ export function useFunnelMetrics() {
     }
   }, []);
 
-  // Fetch metrics from server (requires admin auth - token is auto-included by Supabase client)
+  // Fetch metrics from server (requires admin auth)
   const refreshMetrics = useCallback(async () => {
     setIsLoading(true);
     
@@ -92,7 +93,8 @@ export function useFunnelMetrics() {
       // Get current session for auth header
       const { data: { session } } = await supabase.auth.getSession();
       
-      const { data, error } = await supabase.functions.invoke("quiz-metrics/stats", {
+      const { data, error } = await supabase.functions.invoke("quiz-metrics", {
+        body: { action: "stats" },
         headers: session?.access_token ? {
           Authorization: `Bearer ${session.access_token}`
         } : undefined,
@@ -126,8 +128,8 @@ export function useFunnelMetrics() {
       // Get current session for auth header
       const { data: { session } } = await supabase.auth.getSession();
       
-      const { error } = await supabase.functions.invoke("quiz-metrics/reset", {
-        method: "DELETE",
+      const { data, error } = await supabase.functions.invoke("quiz-metrics", {
+        body: { action: "reset" },
         headers: session?.access_token ? {
           Authorization: `Bearer ${session.access_token}`
         } : undefined,
@@ -153,11 +155,6 @@ export function useFunnelMetrics() {
       setIsLoading(false);
     }
   }, []);
-
-  // Don't auto-load on mount - wait for admin to be authenticated
-  // useEffect(() => {
-  //   refreshMetrics();
-  // }, [refreshMetrics]);
 
   const getDropoffRate = useCallback((fromPage: keyof FunnelMetrics["pageViews"], toPage: keyof FunnelMetrics["pageViews"]) => {
     const fromViews = metrics.pageViews[fromPage];
