@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Crown, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ParticleBackground } from "./ParticleBackground";
 
 interface QuizLandingProps {
   onStart: () => void;
@@ -9,7 +10,10 @@ interface QuizLandingProps {
 
 export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start md:justify-center px-4 py-6 md:px-4 md:py-8">
+    <div className="min-h-screen flex flex-col items-center justify-start md:justify-center px-4 py-6 md:px-4 md:py-8 relative">
+      {/* Particle effects */}
+      <ParticleBackground />
+
       {/* Decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-32 md:w-64 h-32 md:h-64 bg-primary/5 rounded-full blur-3xl" />

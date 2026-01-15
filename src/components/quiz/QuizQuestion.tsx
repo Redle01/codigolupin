@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface QuizQuestionProps {
@@ -22,6 +23,17 @@ export function QuizQuestion({
   selectedAnswer,
 }: QuizQuestionProps) {
   const progress = ((questionNumber) / totalQuestions) * 100;
+  const [justSelected, setJustSelected] = useState<string | null>(null);
+
+  const handleAnswer = (answerId: string) => {
+    setJustSelected(answerId);
+    
+    // Delay to show the feedback animation before advancing
+    setTimeout(() => {
+      onAnswer(answerId);
+      setJustSelected(null);
+    }, 400);
+  };
 
   return (
     <div className="min-h-screen flex flex-col px-4 py-5 md:px-4 md:py-8">
@@ -75,31 +87,67 @@ export function QuizQuestion({
 
             {/* Options */}
             <div className="space-y-3 md:space-y-4">
-              {options.map((option, index) => (
-                <motion.div
-                  key={option.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.08 }}
-                >
-                  <Button
-                    variant="outline"
-                    onClick={() => onAnswer(option.id)}
-                    className={`w-full flex items-center px-4 py-4 md:p-5 h-auto min-h-[4rem] md:min-h-[4rem] text-sm md:text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 ${
-                      selectedAnswer === option.id
-                        ? "border-primary bg-primary/10"
-                        : "border-border"
-                    }`}
+              {options.map((option, index) => {
+                const isSelected = selectedAnswer === option.id || justSelected === option.id;
+                const isJustSelected = justSelected === option.id;
+                
+                return (
+                  <motion.div
+                    key={option.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.08 }}
                   >
-                    <span className="inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full bg-muted text-muted-foreground font-bold shrink-0 text-sm md:text-sm mr-3 md:mr-3">
-                      {option.id.toUpperCase()}
-                    </span>
-                    <span className="flex-1 text-foreground text-left whitespace-normal break-words leading-relaxed">
-                      {option.text}
-                    </span>
-                  </Button>
-                </motion.div>
-              ))}
+                    <motion.div
+                      whileTap={{ scale: 0.98 }}
+                      animate={isJustSelected ? {
+                        boxShadow: [
+                          "0 0 0 0 hsl(43 74% 53% / 0)",
+                          "0 0 0 12px hsl(43 74% 53% / 0.25)",
+                          "0 0 0 0 hsl(43 74% 53% / 0)",
+                        ],
+                      } : {}}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <Button
+                        variant="outline"
+                        onClick={() => handleAnswer(option.id)}
+                        disabled={justSelected !== null}
+                        className={`w-full flex items-center px-4 py-4 md:p-5 h-auto min-h-[4rem] md:min-h-[4rem] text-sm md:text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 ${
+                          isSelected
+                            ? "border-primary bg-primary/10"
+                            : "border-border"
+                        }`}
+                      >
+                        <motion.span 
+                          className={`inline-flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full font-bold shrink-0 text-sm md:text-sm mr-3 md:mr-3 transition-all duration-300 ${
+                            isSelected 
+                              ? "bg-primary text-primary-foreground" 
+                              : "bg-muted text-muted-foreground"
+                          }`}
+                          animate={isJustSelected ? { scale: [1, 1.2, 1] } : {}}
+                          transition={{ duration: 0.3 }}
+                        >
+                          {isJustSelected ? (
+                            <motion.span
+                              initial={{ scale: 0, rotate: -180 }}
+                              animate={{ scale: 1, rotate: 0 }}
+                              transition={{ duration: 0.3, type: "spring" }}
+                            >
+                              <Check className="w-4 h-4" />
+                            </motion.span>
+                          ) : (
+                            option.id.toUpperCase()
+                          )}
+                        </motion.span>
+                        <span className="flex-1 text-foreground text-left whitespace-normal break-words leading-relaxed">
+                          {option.text}
+                        </span>
+                      </Button>
+                    </motion.div>
+                  </motion.div>
+                );
+              })}
             </div>
           </motion.div>
         </AnimatePresence>

@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Crown, Brain, Gem, Shield, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResultType, ResultData } from "@/lib/quizConfig";
+import { ParticleBackground } from "./ParticleBackground";
 
 interface QuizResultProps {
   result: ResultData;
@@ -17,8 +18,11 @@ const iconMap: Record<ResultType, React.ReactNode> = {
 
 export function QuizResult({ result, onCheckout }: QuizResultProps) {
   return (
-    <div className="min-h-screen flex flex-col px-4 py-6 md:px-4 md:py-8 overflow-y-auto">
-      <div className="flex-1 flex flex-col items-center justify-start md:justify-center max-w-3xl mx-auto w-full">
+    <div className="min-h-screen flex flex-col px-4 py-6 md:px-4 md:py-8 overflow-y-auto relative">
+      {/* Particle effects */}
+      <ParticleBackground />
+
+      <div className="flex-1 flex flex-col items-center justify-start md:justify-center max-w-3xl mx-auto w-full relative z-10">
         {/* Celebration animation */}
         <motion.div
           initial={{ scale: 0, rotate: -180 }}
