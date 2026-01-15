@@ -1,28 +1,35 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFunnelMetrics } from "@/hooks/useFunnelMetrics";
+import { useLeads } from "@/hooks/useLeads";
 import { FunnelMetricsPanel } from "@/components/quiz/FunnelMetrics";
+import { AdminDashboard } from "@/components/admin/AdminDashboard";
+import { LeadsTable } from "@/components/admin/LeadsTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, Loader2, Shield, ShieldAlert, BarChart3 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogOut, Loader2, Shield, ShieldAlert, BarChart3, LayoutDashboard, Users, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Admin() {
   const { user, isAdmin, isLoading: isAuthLoading, signIn, signOut } = useAuth();
   const { metrics, resetMetrics, refreshMetrics, getDropoffRate, getConversionRate } = useFunnelMetrics();
+  const { stats, fetchStats } = useLeads();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
-  // Refresh metrics when admin logs in
+  // Refresh data when admin logs in
   useEffect(() => {
     if (user && isAdmin) {
       refreshMetrics();
+      fetchStats();
     }
-  }, [user, isAdmin, refreshMetrics]);
+  }, [user, isAdmin, refreshMetrics, fetchStats]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,7 +151,7 @@ export default function Admin() {
     );
   }
 
-  // Admin - show full metrics panel
+  // Admin - show full admin panel with tabs
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -155,7 +162,7 @@ export default function Admin() {
               <BarChart3 className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold">Painel de Métricas</h1>
+              <h1 className="text-xl font-semibold">Painel Administrativo</h1>
               <p className="text-sm text-muted-foreground">{user.email}</p>
             </div>
           </div>
@@ -166,15 +173,54 @@ export default function Admin() {
         </div>
       </header>
 
-      {/* Main content */}
+      {/* Main content with tabs */}
       <main className="container mx-auto px-4 py-8">
-        <FunnelMetricsPanel
-          metrics={metrics}
-          onReset={resetMetrics}
-          onRefresh={refreshMetrics}
-          getDropoffRate={getDropoffRate}
-          getConversionRate={getConversionRate}
-        />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <LayoutDashboard className="h-4 w-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="leads" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Leads</span>
+            </TabsTrigger>
+            <TabsTrigger value="funnel" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              <span className="hidden sm:inline">Funil</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+              <p className="text-muted-foreground">Visão geral do desempenho do quiz</p>
+            </div>
+            <AdminDashboard stats={stats} />
+          </TabsContent>
+
+          <TabsContent value="leads" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Leads Capturados</h2>
+              <p className="text-muted-foreground">Gerenciar e exportar leads do quiz</p>
+            </div>
+            <LeadsTable />
+          </TabsContent>
+
+          <TabsContent value="funnel" className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Métricas do Funil</h2>
+              <p className="text-muted-foreground">Análise detalhada do funil de conversão</p>
+            </div>
+            <FunnelMetricsPanel
+              metrics={metrics}
+              onReset={resetMetrics}
+              onRefresh={refreshMetrics}
+              getDropoffRate={getDropoffRate}
+              getConversionRate={getConversionRate}
+            />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
