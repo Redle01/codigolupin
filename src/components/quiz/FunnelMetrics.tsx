@@ -44,7 +44,7 @@ export function FunnelMetricsPanel({ metrics, onReset, onRefresh, getDropoffRate
   const maxViews = Math.max(...Object.values(metrics.pageViews), 1);
   const overallConversion = getConversionRate("landing", "result");
   const emailConversion = getConversionRate("landing", "email");
-  const uniqueVisitors = Object.keys(metrics.visitors).length;
+  const uniqueVisitors = metrics.uniqueVisitors;
 
   // Auto-refresh every 5 seconds when enabled
   useEffect(() => {

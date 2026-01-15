@@ -5,11 +5,10 @@ import { quizConfig } from "@/lib/quizConfig";
 import { QuizLanding } from "./QuizLanding";
 import { QuizQuestion } from "./QuizQuestion";
 import { EmailCapture } from "./EmailCapture";
+import { QuizLoading } from "./QuizLoading";
 import { QuizResult } from "./QuizResult";
 import { QuizConfig } from "./QuizConfig";
 
-const STORAGE_KEY_CHECKOUT = "quiz_checkout_url";
-const STORAGE_KEY_WEBHOOK = "quiz_webhook_url";
 const VISIT_TRACKED_KEY = "quiz_visit_tracked";
 
 // Detect if running inside Lovable editor (iframe)
@@ -26,6 +25,7 @@ export function Quiz() {
     state,
     startQuiz,
     answerQuestion,
+    completeLoading,
     continueAfterEmail,
     goBack,
     setEmail,
@@ -35,43 +35,18 @@ export function Quiz() {
     results,
   } = useQuiz();
 
-  const { metrics, trackVisit, trackPageView, resetMetrics, refreshMetrics, getDropoffRate, getConversionRate } = useFunnelMetrics();
+  const { metrics, trackPageView, resetMetrics, refreshMetrics, getDropoffRate, getConversionRate } = useFunnelMetrics();
   const lastTrackedPage = useRef<string | null>(null);
 
-  // Persisted config
-  const [checkoutUrl, setCheckoutUrl] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(STORAGE_KEY_CHECKOUT) || quizConfig.checkoutUrl;
-    }
-    return quizConfig.checkoutUrl;
-  });
-
-  const [webhookUrl, setWebhookUrl] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(STORAGE_KEY_WEBHOOK) || quizConfig.webhookUrl;
-    }
-    return quizConfig.webhookUrl;
-  });
-
-  // Persist config changes
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_CHECKOUT, checkoutUrl);
-  }, [checkoutUrl]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_WEBHOOK, webhookUrl);
-  }, [webhookUrl]);
-
-  // Track visit only once per session
+  // Track initial visit
   useEffect(() => {
     const visitTracked = sessionStorage.getItem(VISIT_TRACKED_KEY);
     if (!visitTracked) {
-      trackVisit();
       sessionStorage.setItem(VISIT_TRACKED_KEY, "true");
     }
-  }, [trackVisit]);
+  }, []);
 
-  // Track page views - always track when step/question changes
+  // Track page views - send to server on every step change
   useEffect(() => {
     let currentPage: string;
     
@@ -81,23 +56,27 @@ export function Quiz() {
       currentPage = `question${state.currentQuestion + 1}`;
     } else if (state.currentStep === "email") {
       currentPage = "email";
+    } else if (state.currentStep === "loading") {
+      return; // Don't track loading screen
     } else if (state.currentStep === "result") {
       currentPage = "result";
     } else {
       return;
     }
 
-    // Track page view - the hook handles deduplication per visitor session
-    trackPageView(currentPage as keyof typeof metrics.pageViews);
-    lastTrackedPage.current = currentPage;
-  }, [state.currentStep, state.currentQuestion, trackPageView, metrics.pageViews]);
+    // Only track if page changed
+    if (currentPage !== lastTrackedPage.current) {
+      trackPageView(currentPage as keyof typeof metrics.pageViews);
+      lastTrackedPage.current = currentPage;
+    }
+  }, [state.currentStep, state.currentQuestion, trackPageView]);
 
   const handleEmailSubmit = async () => {
-    return submitEmail(webhookUrl);
+    return submitEmail();
   };
 
   const handleCheckout = () => {
-    redirectToCheckout(checkoutUrl);
+    redirectToCheckout();
   };
 
   return (
@@ -131,6 +110,10 @@ export function Quiz() {
         />
       )}
 
+      {state.currentStep === "loading" && (
+        <QuizLoading onComplete={completeLoading} />
+      )}
+
       {state.currentStep === "result" && state.result && (
         <QuizResult
           result={results[state.result]}
@@ -141,10 +124,6 @@ export function Quiz() {
       {/* Config panel - only visible inside Lovable editor */}
       {isLovableEditor() && (
         <QuizConfig
-          checkoutUrl={checkoutUrl}
-          webhookUrl={webhookUrl}
-          onCheckoutUrlChange={setCheckoutUrl}
-          onWebhookUrlChange={setWebhookUrl}
           metrics={metrics}
           onResetMetrics={resetMetrics}
           onRefreshMetrics={refreshMetrics}
