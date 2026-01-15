@@ -84,12 +84,19 @@ export function useFunnelMetrics() {
     }
   }, []);
 
-  // Fetch metrics from server
+  // Fetch metrics from server (requires admin auth - token is auto-included by Supabase client)
   const refreshMetrics = useCallback(async () => {
     setIsLoading(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke("quiz-metrics/stats");
+      // Get current session for auth header
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const { data, error } = await supabase.functions.invoke("quiz-metrics/stats", {
+        headers: session?.access_token ? {
+          Authorization: `Bearer ${session.access_token}`
+        } : undefined,
+      });
 
       if (error) {
         console.error("Error fetching metrics:", error);
@@ -111,13 +118,19 @@ export function useFunnelMetrics() {
     }
   }, []);
 
-  // Reset all metrics
+  // Reset all metrics (requires admin auth)
   const resetMetrics = useCallback(async () => {
     setIsLoading(true);
     
     try {
+      // Get current session for auth header
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { error } = await supabase.functions.invoke("quiz-metrics/reset", {
         method: "DELETE",
+        headers: session?.access_token ? {
+          Authorization: `Bearer ${session.access_token}`
+        } : undefined,
       });
 
       if (error) {
@@ -141,10 +154,10 @@ export function useFunnelMetrics() {
     }
   }, []);
 
-  // Initial load
-  useEffect(() => {
-    refreshMetrics();
-  }, [refreshMetrics]);
+  // Don't auto-load on mount - wait for admin to be authenticated
+  // useEffect(() => {
+  //   refreshMetrics();
+  // }, [refreshMetrics]);
 
   const getDropoffRate = useCallback((fromPage: keyof FunnelMetrics["pageViews"], toPage: keyof FunnelMetrics["pageViews"]) => {
     const fromViews = metrics.pageViews[fromPage];

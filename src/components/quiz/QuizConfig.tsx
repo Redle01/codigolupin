@@ -32,7 +32,7 @@ export function QuizConfig({
         <Button
           variant="ghost"
           size="icon"
-          className="fixed bottom-4 right-4 h-12 w-12 rounded-full bg-card border border-border shadow-lg hover:bg-muted"
+          className="fixed bottom-4 right-16 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90"
         >
           <Settings className="w-5 h-5" />
         </Button>

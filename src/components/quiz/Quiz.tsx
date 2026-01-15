@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useFunnelMetrics } from "@/hooks/useFunnelMetrics";
+import { useAuth } from "@/hooks/useAuth";
 import { quizConfig } from "@/lib/quizConfig";
 import { QuizLanding } from "./QuizLanding";
 import { QuizQuestion } from "./QuizQuestion";
@@ -8,17 +9,9 @@ import { EmailCapture } from "./EmailCapture";
 import { QuizLoading } from "./QuizLoading";
 import { QuizResult } from "./QuizResult";
 import { QuizConfig } from "./QuizConfig";
+import { AdminLogin } from "./AdminLogin";
 
 const VISIT_TRACKED_KEY = "quiz_visit_tracked";
-
-// Detect if running inside Lovable editor (iframe)
-const isLovableEditor = () => {
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true; // If we can't access, assume we're in an iframe
-  }
-};
 
 export function Quiz() {
   const {
@@ -36,7 +29,9 @@ export function Quiz() {
   } = useQuiz();
 
   const { metrics, trackPageView, resetMetrics, refreshMetrics, getDropoffRate, getConversionRate } = useFunnelMetrics();
+  const { user, isAdmin, isLoading: isAuthLoading, signIn, signOut } = useAuth();
   const lastTrackedPage = useRef<string | null>(null);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
   // Track initial visit
   useEffect(() => {
@@ -77,6 +72,14 @@ export function Quiz() {
 
   const handleCheckout = () => {
     redirectToCheckout();
+  };
+
+  const handleLogin = async (email: string, password: string) => {
+    await signIn(email, password);
+  };
+
+  const handleLogout = async () => {
+    await signOut();
   };
 
   return (
@@ -121,8 +124,19 @@ export function Quiz() {
         />
       )}
 
-      {/* Config panel - only visible inside Lovable editor */}
-      {isLovableEditor() && (
+      {/* Admin login button - always visible but very discreet */}
+      <AdminLogin
+        isOpen={isLoginOpen}
+        onOpenChange={setIsLoginOpen}
+        onLogin={handleLogin}
+        onLogout={handleLogout}
+        isLoggedIn={!!user}
+        isAdmin={isAdmin}
+        userEmail={user?.email}
+      />
+
+      {/* Config panel - only visible for authenticated admins */}
+      {!isAuthLoading && user && isAdmin && (
         <QuizConfig
           metrics={metrics}
           onResetMetrics={resetMetrics}
