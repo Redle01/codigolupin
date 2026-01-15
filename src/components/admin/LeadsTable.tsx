@@ -33,7 +33,7 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
 const PROFILE_OPTIONS = [
-  { value: "", label: "Todos os perfis" },
+  { value: "all", label: "Todos os perfis" },
   { value: "diamante", label: "💎 Diamante" },
   { value: "estrategista", label: "🎯 Estrategista" },
   { value: "visionario", label: "🔮 Visionário" },
@@ -50,12 +50,12 @@ const PROFILE_BADGES: Record<string, { label: string; emoji: string; className: 
 export function LeadsTable() {
   const { leads, total, page, limit, isLoading, fetchLeads, exportCSV, setPage } = useLeads();
   const [search, setSearch] = useState("");
-  const [resultType, setResultType] = useState("");
+  const [resultType, setResultType] = useState("all");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
-    fetchLeads({ page: 1, search, resultType });
+    fetchLeads({ page: 1, search, resultType: resultType === "all" ? "" : resultType });
   }, []);
 
   const handleSearch = () => {
@@ -64,7 +64,7 @@ export function LeadsTable() {
 
   const handleFilterChange = (value: string) => {
     setResultType(value);
-    fetchLeads({ page: 1, search, resultType: value });
+    fetchLeads({ page: 1, search, resultType: value === "all" ? "" : value });
   };
 
   const handlePageChange = (newPage: number) => {
