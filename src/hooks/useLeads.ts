@@ -60,7 +60,8 @@ export function useLeads(): UseLeadsReturn {
         limit: String(limit),
       });
       if (options?.search) params.set("search", options.search);
-      if (options?.resultType) params.set("result_type", options.resultType);
+      // Don't send "all" as result_type - it means no filter
+      if (options?.resultType && options.resultType !== "all") params.set("result_type", options.resultType);
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/quiz-leads?${params}`,
@@ -107,7 +108,7 @@ export function useLeads(): UseLeadsReturn {
       const headers = await getAuthHeaders();
       const params = new URLSearchParams({ action: "export" });
       if (options?.search) params.set("search", options.search);
-      if (options?.resultType) params.set("result_type", options.resultType);
+      if (options?.resultType && options.resultType !== "all") params.set("result_type", options.resultType);
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/quiz-leads?${params}`,
