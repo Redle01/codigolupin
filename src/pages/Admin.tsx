@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFunnelMetrics } from "@/hooks/useFunnelMetrics";
 import { useLeads } from "@/hooks/useLeads";
+import { useLeadsTimeline } from "@/hooks/useLeadsTimeline";
 import { FunnelMetricsPanel } from "@/components/quiz/FunnelMetrics";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { LeadsTable } from "@/components/admin/LeadsTable";
+import { LeadsTimelineChart } from "@/components/admin/LeadsTimelineChart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,19 +19,22 @@ export default function Admin() {
   const { user, isAdmin, isLoading: isAuthLoading, signIn, signOut } = useAuth();
   const { metrics, resetMetrics, refreshMetrics, getDropoffRate, getConversionRate } = useFunnelMetrics();
   const { stats, fetchStats } = useLeads();
+  const { timeline, isLoading: isTimelineLoading, fetchTimeline } = useLeadsTimeline();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [timelinePeriod, setTimelinePeriod] = useState(30);
 
   // Refresh data when admin logs in
   useEffect(() => {
     if (user && isAdmin) {
       refreshMetrics();
       fetchStats();
+      fetchTimeline(timelinePeriod);
     }
-  }, [user, isAdmin, refreshMetrics, fetchStats]);
+  }, [user, isAdmin, refreshMetrics, fetchStats, fetchTimeline, timelinePeriod]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,6 +202,20 @@ export default function Admin() {
               <p className="text-muted-foreground">Visão geral do desempenho do quiz</p>
             </div>
             <AdminDashboard stats={stats} />
+            
+            {/* Timeline Charts */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">Evolução Temporal</h3>
+              <LeadsTimelineChart 
+                timeline={timeline}
+                isLoading={isTimelineLoading}
+                onPeriodChange={(days) => {
+                  setTimelinePeriod(days);
+                  fetchTimeline(days);
+                }}
+                selectedPeriod={timelinePeriod}
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="leads" className="space-y-6">
