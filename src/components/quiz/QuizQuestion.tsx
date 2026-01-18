@@ -53,16 +53,16 @@ export function QuizQuestion({
         </div>
 
         {/* Progress bar */}
-        <div className="relative h-2.5 md:h-3 bg-muted/50 rounded-full overflow-hidden border border-border/30">
+        <div className="relative h-2.5 md:h-3 bg-[hsl(350_30%_12%)] rounded-full overflow-hidden border border-[hsl(350_40%_20%)/0.3]">
           <motion.div
-            className="h-full bg-gradient-gold relative overflow-hidden shadow-gold"
+            className="h-full bg-gradient-lupin-progress relative overflow-hidden shadow-lupin-glow"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ type: "spring", stiffness: 80, damping: 18 }}
           >
             {/* Shimmer effect */}
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-cream/25 to-transparent"
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-[hsl(43_70%_75%)/0.35] to-transparent"
               animate={{ x: ["-100%", "200%"] }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             />
