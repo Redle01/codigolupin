@@ -128,4 +128,21 @@
   .shadow-gold-lg {
     box-shadow: 0 10px 50px -10px hsl(var(--gold) / 0.4);
   }
+
+  /* Premium Lupin Progress Bar - Inspired by book cover */
+  .bg-gradient-lupin-progress {
+    background: linear-gradient(
+      90deg,
+      hsl(350 55% 38%) 0%,
+      hsl(355 50% 42%) 20%,
+      hsl(38 65% 48%) 50%,
+      hsl(43 70% 55%) 100%
+    );
+  }
+
+  .shadow-lupin-glow {
+    box-shadow: 
+      0 0 8px hsl(43 70% 55% / 0.5),
+      0 0 20px hsl(350 55% 38% / 0.3);
+  }
 }

@@ -121,16 +121,16 @@ export function QuizLoading({ onComplete }: QuizLoadingProps) {
         </AnimatePresence>
 
         {/* Progress Bar */}
-        <div className="relative w-full h-2.5 bg-muted/50 rounded-full overflow-hidden border border-border/30">
+        <div className="relative w-full h-2.5 bg-[hsl(350_30%_12%)] rounded-full overflow-hidden border border-[hsl(350_40%_20%)/0.3]">
           <motion.div
-            className="h-full bg-gradient-gold relative overflow-hidden shadow-gold"
+            className="h-full bg-gradient-lupin-progress relative overflow-hidden shadow-lupin-glow"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ type: "spring", stiffness: 100, damping: 20 }}
           >
             {/* Shimmer effect */}
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-cream/30 to-transparent"
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-[hsl(43_70%_75%)/0.4] to-transparent"
               animate={{ x: ["-100%", "200%"] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
             />
