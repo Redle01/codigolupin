@@ -172,6 +172,78 @@ serve(async (req: Request) => {
       );
     }
 
+    if (action === "timeline") {
+      const days = parseInt(url.searchParams.get("days") || "30");
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      const startDateStr = startDate.toISOString();
+
+      // Get leads with dates
+      const { data: leads, error: leadsError } = await serviceClient
+        .from("quiz_leads")
+        .select("created_at")
+        .gte("created_at", startDateStr)
+        .order("created_at", { ascending: true });
+
+      if (leadsError) {
+        throw leadsError;
+      }
+
+      // Get funnel events with dates for conversions
+      const { data: events, error: eventsError } = await serviceClient
+        .from("quiz_funnel_events")
+        .select("created_at, visitor_id, page_key")
+        .gte("created_at", startDateStr)
+        .order("created_at", { ascending: true });
+
+      if (eventsError) {
+        throw eventsError;
+      }
+
+      // Group leads by date
+      const leadsPerDay: Record<string, number> = {};
+      leads?.forEach((lead) => {
+        const date = lead.created_at.split("T")[0];
+        leadsPerDay[date] = (leadsPerDay[date] || 0) + 1;
+      });
+
+      // Group visitors by date (unique visitors who started quiz)
+      const visitorsPerDay: Record<string, Set<string>> = {};
+      events?.forEach((event) => {
+        const date = event.created_at.split("T")[0];
+        if (!visitorsPerDay[date]) {
+          visitorsPerDay[date] = new Set();
+        }
+        visitorsPerDay[date].add(event.visitor_id);
+      });
+
+      // Generate timeline data for all days in range
+      const timeline: Array<{ date: string; leads: number; visitors: number; conversionRate: number }> = [];
+      const currentDate = new Date(startDate);
+      const today = new Date();
+
+      while (currentDate <= today) {
+        const dateStr = currentDate.toISOString().split("T")[0];
+        const dayLeads = leadsPerDay[dateStr] || 0;
+        const dayVisitors = visitorsPerDay[dateStr]?.size || 0;
+        const dayConversion = dayVisitors > 0 ? Math.round((dayLeads / dayVisitors) * 100) : 0;
+
+        timeline.push({
+          date: dateStr,
+          leads: dayLeads,
+          visitors: dayVisitors,
+          conversionRate: dayConversion,
+        });
+
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+
+      return new Response(JSON.stringify({ timeline }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Invalid action" }), {
       status: 400,
       headers: { "Content-Type": "application/json", ...corsHeaders },
