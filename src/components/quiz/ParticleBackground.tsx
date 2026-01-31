@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { useMemo } from "react";
 
 interface Particle {
@@ -13,13 +12,13 @@ interface Particle {
 
 export function ParticleBackground() {
   const particles = useMemo<Particle[]>(() => {
-    return Array.from({ length: 10 }, (_, i) => ({
+    return Array.from({ length: 8 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: 2 + Math.random() * 4,
-      duration: 15 + Math.random() * 10,
-      delay: Math.random() * 5,
+      size: 2 + Math.random() * 3,
+      duration: 12 + Math.random() * 8,
+      delay: Math.random() * 4,
       color: i % 3 === 0 ? "burgundy" : "gold",
     }));
   }, []);
@@ -27,30 +26,21 @@ export function ParticleBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {particles.map((particle) => (
-        <motion.div
+        <div
           key={particle.id}
-          className={`absolute rounded-full ${
+          className={`absolute rounded-full animate-particle-float ${
             particle.color === "gold"
-              ? "bg-[hsl(var(--gold))]"
-              : "bg-[hsl(var(--burgundy))]"
+              ? "bg-gold-particle"
+              : "bg-burgundy-particle"
           }`}
           style={{
             left: `${particle.x}%`,
             top: `${particle.y}%`,
             width: particle.size,
             height: particle.size,
-          }}
-          initial={{ opacity: 0 }}
-          animate={{
-            opacity: [0.15, 0.35, 0.15],
-            y: [0, -30, -15, -40, 0],
-            x: [0, 15, -10, 5, 0],
-          }}
-          transition={{
-            duration: particle.duration,
-            delay: particle.delay,
-            repeat: Infinity,
-            ease: "easeInOut",
+            animationDuration: `${particle.duration}s`,
+            animationDelay: `${particle.delay}s`,
+            willChange: "transform, opacity",
           }}
         />
       ))}

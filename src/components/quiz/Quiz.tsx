@@ -1,14 +1,33 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, lazy, Suspense, memo } from "react";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useFunnelMetrics } from "@/hooks/useFunnelMetrics";
 import { quizConfig } from "@/lib/quizConfig";
 import { QuizLanding } from "./QuizLanding";
-import { QuizQuestion } from "./QuizQuestion";
-import { EmailCapture } from "./EmailCapture";
-import { QuizLoading } from "./QuizLoading";
-import { QuizResult } from "./QuizResult";
+
+// Lazy load non-critical components
+const QuizQuestion = lazy(() => 
+  import("./QuizQuestion").then(m => ({ default: m.QuizQuestion }))
+);
+const EmailCapture = lazy(() => 
+  import("./EmailCapture").then(m => ({ default: m.EmailCapture }))
+);
+const QuizLoading = lazy(() => 
+  import("./QuizLoading").then(m => ({ default: m.QuizLoading }))
+);
+const QuizResult = lazy(() => 
+  import("./QuizResult").then(m => ({ default: m.QuizResult }))
+);
 
 const VISIT_TRACKED_KEY = "quiz_visit_tracked";
+
+// Minimal fallback to prevent white flash
+const QuizFallback = memo(() => (
+  <div className="min-h-screen bg-background" />
+));
+QuizFallback.displayName = "QuizFallback";
+
+// Memoized landing component
+const MemoizedQuizLanding = memo(QuizLanding);
 
 export function Quiz() {
   const {
@@ -27,6 +46,7 @@ export function Quiz() {
 
   const { metrics, trackPageView } = useFunnelMetrics();
   const lastTrackedPage = useRef<string | null>(null);
+  const preloadedRef = useRef(false);
 
   // Track initial visit
   useEffect(() => {
@@ -35,6 +55,22 @@ export function Quiz() {
       sessionStorage.setItem(VISIT_TRACKED_KEY, "true");
     }
   }, []);
+
+  // Preload next component during idle time
+  useEffect(() => {
+    if (state.currentStep === "landing" && !preloadedRef.current) {
+      const preload = () => {
+        import("./QuizQuestion");
+        preloadedRef.current = true;
+      };
+      
+      if ("requestIdleCallback" in window) {
+        (window as Window).requestIdleCallback(preload, { timeout: 3000 });
+      } else {
+        setTimeout(preload, 1000);
+      }
+    }
+  }, [state.currentStep]);
 
   // Track page views - send to server on every step change
   useEffect(() => {
@@ -69,55 +105,49 @@ export function Quiz() {
     redirectToCheckout();
   };
 
-  // Generate unique key for each step
-  const getStepKey = () => {
-    if (state.currentStep === "questions") {
-      return `questions-${state.currentQuestion}`;
-    }
-    return state.currentStep;
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {state.currentStep === "landing" && (
-        <QuizLanding
+        <MemoizedQuizLanding
           onStart={startQuiz}
           totalParticipants={quizConfig.totalParticipants}
         />
       )}
 
-      {state.currentStep === "questions" && (
-        <QuizQuestion
-          questionNumber={state.currentQuestion + 1}
-          totalQuestions={questions.length}
-          question={questions[state.currentQuestion].question}
-          options={questions[state.currentQuestion].options}
-          onAnswer={(answerId) => answerQuestion(state.currentQuestion, answerId)}
-          onBack={goBack}
-          selectedAnswer={state.answers[state.currentQuestion]}
-        />
-      )}
+      <Suspense fallback={<QuizFallback />}>
+        {state.currentStep === "questions" && (
+          <QuizQuestion
+            questionNumber={state.currentQuestion + 1}
+            totalQuestions={questions.length}
+            question={questions[state.currentQuestion].question}
+            options={questions[state.currentQuestion].options}
+            onAnswer={(answerId) => answerQuestion(state.currentQuestion, answerId)}
+            onBack={goBack}
+            selectedAnswer={state.answers[state.currentQuestion]}
+          />
+        )}
 
-      {state.currentStep === "email" && (
-        <EmailCapture
-          email={state.email}
-          onEmailChange={setEmail}
-          onSubmit={handleEmailSubmit}
-          onContinue={continueAfterEmail}
-          isSubmitting={state.isSubmitting}
-        />
-      )}
+        {state.currentStep === "email" && (
+          <EmailCapture
+            email={state.email}
+            onEmailChange={setEmail}
+            onSubmit={handleEmailSubmit}
+            onContinue={continueAfterEmail}
+            isSubmitting={state.isSubmitting}
+          />
+        )}
 
-      {state.currentStep === "loading" && (
-        <QuizLoading onComplete={completeLoading} />
-      )}
+        {state.currentStep === "loading" && (
+          <QuizLoading onComplete={completeLoading} />
+        )}
 
-      {state.currentStep === "result" && state.result && (
-        <QuizResult
-          result={results[state.result]}
-          onCheckout={handleCheckout}
-        />
-      )}
+        {state.currentStep === "result" && state.result && (
+          <QuizResult
+            result={results[state.result]}
+            onCheckout={handleCheckout}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }
