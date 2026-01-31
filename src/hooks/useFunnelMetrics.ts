@@ -58,31 +58,43 @@ export function getOrCreateVisitorId(): string {
   return visitorId;
 }
 
+// Helper to schedule work during idle time
+function scheduleIdleWork(callback: () => void, timeout = 2000) {
+  if ("requestIdleCallback" in window) {
+    (window as Window).requestIdleCallback(callback, { timeout });
+  } else {
+    setTimeout(callback, 100);
+  }
+}
+
+// Async tracking function - fire and forget
+async function sendTrackingEvent(visitorId: string, page: string) {
+  try {
+    await supabase.functions.invoke("quiz-metrics", {
+      body: {
+        action: "track",
+        visitor_id: visitorId,
+        page_key: page,
+      },
+    });
+  } catch (error) {
+    // Silently fail - tracking should never block UI
+    console.debug("Tracking error:", error);
+  }
+}
+
 export function useFunnelMetrics() {
   const [metrics, setMetrics] = useState<FunnelMetrics>(defaultMetrics);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Track page view via Edge Function
-  const trackPageView = useCallback(async (page: keyof FunnelMetrics["pageViews"]) => {
+  // Track page view via Edge Function - deferred to idle time
+  const trackPageView = useCallback((page: keyof FunnelMetrics["pageViews"]) => {
     const visitorId = getOrCreateVisitorId();
     
-    try {
-      const { data, error } = await supabase.functions.invoke("quiz-metrics", {
-        body: {
-          action: "track",
-          visitor_id: visitorId,
-          page_key: page,
-        },
-      });
-
-      if (error) {
-        console.error("Error tracking page view:", error);
-      } else {
-        console.log("Page view tracked:", page, data);
-      }
-    } catch (error) {
-      console.error("Error tracking page view:", error);
-    }
+    // Defer tracking to idle time - never blocks UI
+    scheduleIdleWork(() => {
+      sendTrackingEvent(visitorId, page);
+    });
   }, []);
 
   // Fetch metrics from server (requires admin auth)
