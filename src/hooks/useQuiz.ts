@@ -183,6 +183,7 @@ export function useQuiz() {
       'pay.hotmart.com',
       'app.hotmart.com',
       'checkout.hotmart.com',
+      'checkout.ticto.app',
     ];
     
     try {
