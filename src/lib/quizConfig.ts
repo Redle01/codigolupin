@@ -1,7 +1,7 @@
 // Quiz Configuration - Easy to update URLs
 export const quizConfig = {
   // External checkout URL - replace with your actual checkout link
-  checkoutUrl: "https://checkout.ticto.app/O6DE7A453",
+  checkoutUrl: "https://pay.hotmart.com/YOUR_PRODUCT_ID",
   
   // Webhook URL for email marketing integration
   webhookUrl: "",

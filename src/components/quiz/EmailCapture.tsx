@@ -88,6 +88,7 @@ export const EmailCapture = memo(function EmailCapture({
             {[
                 "Sua análise completa e personalizada",
                 "Plano específico de transformação para seu tipo",
+                "Bônus exclusivo: \"As Confissões de Arsène Lupin\" (R$97)",
                 "Bônus exclusivo: \"25 Frases de Impacto que Desarmam Qualquer Mulher\" (R$67)",
                 "Bônus exclusivo: \"Dominando o Carnaval 2026\" (R$97) — Liberado por tempo limitado",
               ].map((benefit, index) => (
