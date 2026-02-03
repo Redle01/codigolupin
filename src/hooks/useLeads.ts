@@ -25,17 +25,18 @@ interface UseLeadsReturn {
   limit: number;
   isLoading: boolean;
   stats: LeadStats | null;
-  fetchLeads: (options?: { page?: number; search?: string; resultType?: string }) => Promise<void>;
+  fetchLeads: (options?: { page?: number; search?: string; resultType?: string; limit?: number }) => Promise<void>;
   fetchStats: () => Promise<void>;
   exportCSV: (options?: { search?: string; resultType?: string }) => Promise<void>;
   setPage: (page: number) => void;
+  setLimit: (limit: number) => void;
 }
 
 export function useLeads(): UseLeadsReturn {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState<LeadStats | null>(null);
 
@@ -50,14 +51,15 @@ export function useLeads(): UseLeadsReturn {
     };
   };
 
-  const fetchLeads = useCallback(async (options?: { page?: number; search?: string; resultType?: string }) => {
+  const fetchLeads = useCallback(async (options?: { page?: number; search?: string; resultType?: string; limit?: number }) => {
     setIsLoading(true);
+    const effectiveLimit = options?.limit || limit;
     try {
       const headers = await getAuthHeaders();
       const params = new URLSearchParams({
         action: "list",
         page: String(options?.page || page),
-        limit: String(limit),
+        limit: String(effectiveLimit),
       });
       if (options?.search) params.set("search", options.search);
       // Don't send "all" as result_type - it means no filter
@@ -145,5 +147,6 @@ export function useLeads(): UseLeadsReturn {
     fetchStats,
     exportCSV,
     setPage,
+    setLimit,
   };
 }

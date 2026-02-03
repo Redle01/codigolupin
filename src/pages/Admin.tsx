@@ -1,19 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useFunnelMetrics } from "@/hooks/useFunnelMetrics";
 import { useLeads } from "@/hooks/useLeads";
 import { useLeadsTimeline } from "@/hooks/useLeadsTimeline";
-import { FunnelMetricsPanel } from "@/components/quiz/FunnelMetrics";
+import { useRealtimeAdmin } from "@/hooks/useRealtimeAdmin";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { LeadsTable } from "@/components/admin/LeadsTable";
 import { LeadsTimelineChart } from "@/components/admin/LeadsTimelineChart";
+import { FunnelMetricsInline } from "@/components/admin/FunnelMetricsInline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Loader2, Shield, ShieldAlert, BarChart3, LayoutDashboard, Users, TrendingUp } from "lucide-react";
+import { LogOut, Loader2, Shield, ShieldAlert, BarChart3, LayoutDashboard, Users, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function Admin() {
   const { user, isAdmin, isLoading: isAuthLoading, signIn, signOut } = useAuth();
@@ -26,6 +29,26 @@ export default function Admin() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [timelinePeriod, setTimelinePeriod] = useState(30);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Refresh all data callback
+  const handleRefreshAll = useCallback(() => {
+    setIsRefreshing(true);
+    Promise.all([
+      refreshMetrics(),
+      fetchStats(),
+      fetchTimeline(timelinePeriod),
+    ]).finally(() => {
+      setTimeout(() => setIsRefreshing(false), 500);
+    });
+  }, [refreshMetrics, fetchStats, fetchTimeline, timelinePeriod]);
+
+  // Realtime subscription
+  const { isConnected, lastUpdate } = useRealtimeAdmin({
+    onLeadInserted: handleRefreshAll,
+    onFunnelEventInserted: handleRefreshAll,
+    enabled: !!user && isAdmin,
+  });
 
   // Refresh data when admin logs in
   useEffect(() => {
@@ -171,17 +194,38 @@ export default function Admin() {
               <p className="text-sm text-muted-foreground">{user.email}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={handleLogout}>
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair
-          </Button>
+          <div className="flex items-center gap-4">
+            {/* Realtime Status Indicator */}
+            <div className="hidden sm:flex items-center gap-2">
+              {isConnected ? (
+                <span className="flex items-center gap-1.5 text-sm">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-green-500 font-medium">Ao vivo</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <span className="w-2 h-2 bg-muted rounded-full" />
+                  Offline
+                </span>
+              )}
+              {lastUpdate && (
+                <span className="text-xs text-muted-foreground">
+                  · {formatDistanceToNow(lastUpdate, { locale: ptBR, addSuffix: true })}
+                </span>
+              )}
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair
+            </Button>
+          </div>
         </div>
       </header>
 
       {/* Main content with tabs */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-xs grid-cols-2">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <LayoutDashboard className="h-4 w-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -190,18 +234,52 @@ export default function Admin() {
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Leads</span>
             </TabsTrigger>
-            <TabsTrigger value="funnel" className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              <span className="hidden sm:inline">Funil</span>
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-              <p className="text-muted-foreground">Visão geral do desempenho do quiz</p>
+            {/* Dashboard Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+                <p className="text-muted-foreground">Visão geral do desempenho do quiz</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleRefreshAll}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Atualizar
+              </Button>
             </div>
+
+            {/* Stats Cards */}
             <AdminDashboard stats={stats} />
+
+            {/* Funnel Metrics Inline */}
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Métricas do Funil</CardTitle>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => resetMetrics()}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    Resetar Métricas
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <FunnelMetricsInline 
+                  metrics={metrics}
+                  getDropoffRate={getDropoffRate}
+                  getConversionRate={getConversionRate}
+                />
+              </CardContent>
+            </Card>
             
             {/* Timeline Charts */}
             <div className="mt-6">
@@ -224,20 +302,6 @@ export default function Admin() {
               <p className="text-muted-foreground">Gerenciar e exportar leads do quiz</p>
             </div>
             <LeadsTable />
-          </TabsContent>
-
-          <TabsContent value="funnel" className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">Métricas do Funil</h2>
-              <p className="text-muted-foreground">Análise detalhada do funil de conversão</p>
-            </div>
-            <FunnelMetricsPanel
-              metrics={metrics}
-              onReset={resetMetrics}
-              onRefresh={refreshMetrics}
-              getDropoffRate={getDropoffRate}
-              getConversionRate={getConversionRate}
-            />
           </TabsContent>
         </Tabs>
       </main>
