@@ -225,20 +225,20 @@ serve(async (req: Request): Promise<Response> => {
         );
       }
 
-      // Get all leads to associate emails
+      // Get all leads to associate emails and offer_flow
       const { data: leads, error: leadsError } = await supabaseAdmin
         .from("quiz_leads")
-        .select("visitor_id, email, result_type");
+        .select("visitor_id, email, result_type, offer_flow");
 
       if (leadsError) {
         console.error("Error fetching leads:", leadsError);
       }
 
       // Create leads lookup map
-      const leadsMap = new Map<string, { email: string; result_type: string | null }>();
+      const leadsMap = new Map<string, { email: string; result_type: string | null; offer_flow: number | null }>();
       leads?.forEach((lead) => {
         if (lead.visitor_id) {
-          leadsMap.set(lead.visitor_id, { email: lead.email, result_type: lead.result_type });
+          leadsMap.set(lead.visitor_id, { email: lead.email, result_type: lead.result_type, offer_flow: lead.offer_flow });
         }
       });
 
@@ -258,6 +258,7 @@ serve(async (req: Request): Promise<Response> => {
         startedAt: string;
         lastSeenAt: string;
         profileType?: string;
+        offerFlow?: number;
       }> = {};
 
       events?.forEach((event) => {
@@ -289,6 +290,7 @@ serve(async (req: Request): Promise<Response> => {
         if (leadInfo) {
           visitorProgress[visitor_id].email = leadInfo.email;
           visitorProgress[visitor_id].profileType = leadInfo.result_type || undefined;
+          visitorProgress[visitor_id].offerFlow = leadInfo.offer_flow || undefined;
         }
       });
 
@@ -306,6 +308,12 @@ serve(async (req: Request): Promise<Response> => {
       const completedFunnel = visitors.filter(v => v.reachedStep === "result").length;
       const reachedEmail = visitors.filter(v => stepOrder.indexOf(v.reachedStep) >= stepOrder.indexOf("email")).length;
       const abandonedAtEmail = visitors.filter(v => v.reachedStep === "email" && !v.email).length;
+      
+      // Stats by offer flow
+      const flow1Completions = visitors.filter(v => v.offerFlow === 1 && v.reachedStep === "result").length;
+      const flow2Completions = visitors.filter(v => v.offerFlow === 2 && v.reachedStep === "result").length;
+      const flow1Leads = visitors.filter(v => v.offerFlow === 1).length;
+      const flow2Leads = visitors.filter(v => v.offerFlow === 2).length;
 
       return new Response(
         JSON.stringify({
@@ -314,6 +322,10 @@ serve(async (req: Request): Promise<Response> => {
           completedFunnel,
           reachedEmail,
           abandonedAtEmail,
+          flowStats: {
+            flow1: { leads: flow1Leads, completions: flow1Completions },
+            flow2: { leads: flow2Leads, completions: flow2Completions },
+          },
         }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );

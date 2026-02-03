@@ -162,6 +162,7 @@ export function LeadsTable() {
             <TableRow>
               <TableHead>Email</TableHead>
               <TableHead>Perfil</TableHead>
+              <TableHead>Oferta</TableHead>
               <TableHead>Data</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -169,13 +170,13 @@ export function LeadsTable() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
+                <TableCell colSpan={5} className="h-24 text-center">
                   <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                 </TableCell>
               </TableRow>
             ) : leads.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                   Nenhum lead encontrado
                 </TableCell>
               </TableRow>
@@ -189,6 +190,21 @@ export function LeadsTable() {
                       {profile ? (
                         <Badge variant="outline" className={profile.className}>
                           {profile.emoji} {profile.label}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {lead.offer_flow ? (
+                        <Badge 
+                          variant="outline" 
+                          className={lead.offer_flow === 1 
+                            ? "bg-primary/10 text-primary border-primary/20" 
+                            : "bg-secondary text-secondary-foreground border-secondary"
+                          }
+                        >
+                          Oferta {lead.offer_flow}
                         </Badge>
                       ) : (
                         <span className="text-muted-foreground">-</span>

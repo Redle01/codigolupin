@@ -1,12 +1,19 @@
 import { motion } from "framer-motion";
-import { ArrowRight, AlertTriangle, Users, Target, TrendingDown, CheckCircle2 } from "lucide-react";
+import { ArrowRight, AlertTriangle, Users, Target, TrendingDown, CheckCircle2, Zap, Crown } from "lucide-react";
 import { FunnelMetrics as FunnelMetricsType } from "@/hooks/useFunnelMetrics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface FlowCounts {
+  flow1: number;
+  flow2: number;
+  unknown: number;
+}
 
 interface FunnelMetricsInlineProps {
   metrics: FunnelMetricsType;
   getDropoffRate: (from: keyof FunnelMetricsType["pageViews"], to: keyof FunnelMetricsType["pageViews"]) => number;
   getConversionRate: (from: keyof FunnelMetricsType["pageViews"], to: keyof FunnelMetricsType["pageViews"]) => number;
+  flowCounts?: FlowCounts;
 }
 
 const funnelSteps: { key: keyof FunnelMetricsType["pageViews"]; label: string; icon: string }[] = [
@@ -23,10 +30,11 @@ const funnelSteps: { key: keyof FunnelMetricsType["pageViews"]; label: string; i
   { key: "result", label: "Resultado", icon: "🏆" },
 ];
 
-export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate }: FunnelMetricsInlineProps) {
+export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate, flowCounts }: FunnelMetricsInlineProps) {
   const maxViews = Math.max(...Object.values(metrics.pageViews), 1);
   const overallConversion = getConversionRate("landing", "result");
   const emailConversion = getConversionRate("landing", "email");
+  const totalFlowLeads = (flowCounts?.flow1 || 0) + (flowCounts?.flow2 || 0);
 
   // Find the biggest dropoff point
   let biggestDropoff = { from: "", to: "", rate: 0, fromKey: "", toKey: "" };
@@ -164,6 +172,56 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
             </p>
           </div>
         </motion.div>
+      )}
+
+      {/* Offer Flow Distribution */}
+      {flowCounts && totalFlowLeads > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Target className="w-4 h-4" />
+              Distribuição por Oferta (baseado na Q7)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-4 rounded-lg bg-primary/10 border border-primary/20"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="w-4 h-4 text-primary" />
+                  <p className="text-xs text-muted-foreground font-medium">Oferta 1 (A/B)</p>
+                </div>
+                <p className="text-2xl font-bold text-primary">{flowCounts.flow1}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {totalFlowLeads > 0 ? Math.round((flowCounts.flow1 / totalFlowLeads) * 100) : 0}% dos leads
+                </p>
+              </motion.div>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                className="p-4 rounded-lg bg-secondary/50 border border-secondary"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown className="w-4 h-4 text-secondary-foreground" />
+                  <p className="text-xs text-muted-foreground font-medium">Oferta 2 (C/D)</p>
+                </div>
+                <p className="text-2xl font-bold text-secondary-foreground">{flowCounts.flow2}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {totalFlowLeads > 0 ? Math.round((flowCounts.flow2 / totalFlowLeads) * 100) : 0}% dos leads
+                </p>
+              </motion.div>
+            </div>
+            {flowCounts.unknown > 0 && (
+              <p className="text-xs text-muted-foreground mt-3 text-center">
+                {flowCounts.unknown} lead(s) ainda sem classificação de oferta
+              </p>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Last Updated */}

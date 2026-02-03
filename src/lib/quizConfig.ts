@@ -1,6 +1,21 @@
 // Quiz Configuration - Easy to update URLs
 export const quizConfig = {
-  // External checkout URL - replace with your actual checkout link
+  // URLs de checkout por fluxo condicional (baseado na Questão 7)
+  checkoutUrls: {
+    flow1: "https://checkout.ticto.app/OAD8936CD", // Respostas A/B na Q7
+    flow2: "https://checkout.ticto.app/O6DE7A453", // Respostas C/D na Q7
+  },
+  
+  // Mapeamento de respostas da Q7 para fluxos de oferta
+  // A e B = Fluxo 1 (preço mais baixo), C e D = Fluxo 2 (premium)
+  question7FlowMapping: {
+    a: 1,
+    b: 1,
+    c: 2,
+    d: 2,
+  } as const,
+  
+  // Legacy: mantido para compatibilidade (não usado diretamente)
   checkoutUrl: "https://checkout.ticto.app/O6DE7A453",
   
   // Webhook URL for email marketing integration
