@@ -1,15 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Line, LineChart } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from "recharts";
 import { TrendingUp, Users } from "lucide-react";
 import { TimelineData } from "@/hooks/useLeadsTimeline";
 
 interface LeadsTimelineChartProps {
   timeline: TimelineData[];
   isLoading: boolean;
-  onPeriodChange: (days: number) => void;
-  selectedPeriod: number;
 }
 
 const chartConfig = {
@@ -32,7 +29,7 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-export function LeadsTimelineChart({ timeline, isLoading, onPeriodChange, selectedPeriod }: LeadsTimelineChartProps) {
+export function LeadsTimelineChart({ timeline, isLoading }: LeadsTimelineChartProps) {
   const formattedData = timeline.map((item) => ({
     ...item,
     formattedDate: formatDate(item.date),
@@ -52,20 +49,6 @@ export function LeadsTimelineChart({ timeline, isLoading, onPeriodChange, select
             <Users className="h-4 w-4 text-muted-foreground" />
             <CardTitle className="text-sm font-medium">Crescimento de Leads</CardTitle>
           </div>
-          <Select
-            value={String(selectedPeriod)}
-            onValueChange={(value) => onPeriodChange(parseInt(value))}
-          >
-            <SelectTrigger className="w-[120px] h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">Últimos 7 dias</SelectItem>
-              <SelectItem value="14">Últimos 14 dias</SelectItem>
-              <SelectItem value="30">Últimos 30 dias</SelectItem>
-              <SelectItem value="60">Últimos 60 dias</SelectItem>
-            </SelectContent>
-          </Select>
         </CardHeader>
         <CardContent>
           <div className="flex items-baseline gap-2 mb-4">

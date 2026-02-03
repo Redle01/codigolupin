@@ -1,10 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { quizQuestions, quizResults, ResultType, quizConfig } from "@/lib/quizConfig";
 import { supabase } from "@/integrations/supabase/client";
 import { getOrCreateVisitorId } from "./useFunnelMetrics";
-
-const QUIZ_STATE_STORAGE_KEY = "quiz_user_state";
-const SESSION_ACTIVE_KEY = "quiz_session_active";
+import { useMetaPixel } from "./useMetaPixel";
 
 export interface QuizState {
   currentStep: "landing" | "questions" | "email" | "loading" | "result";
@@ -35,7 +33,11 @@ function getOfferFlow(answers: Record<number, string>): 1 | 2 | null {
   return flowMapping[question7Answer as keyof typeof flowMapping] || null;
 }
 
+const QUIZ_STATE_STORAGE_KEY = "quiz_user_state";
+const SESSION_ACTIVE_KEY = "quiz_session_active";
+
 export function useQuiz() {
+  const { trackInitiateCheckout, trackChegouCheckout } = useMetaPixel();
   const [state, setState] = useState<QuizState>(() => {
     if (typeof window !== "undefined") {
       // Check if this is a page refresh (session still active) or a new entry
@@ -227,18 +229,47 @@ export function useQuiz() {
         return;
       }
       
+      // Pré-preencher email
       if (state.email) {
         url.searchParams.set("email", state.email);
       }
+      
+      // Pré-preencher perfil
       if (state.result) {
         url.searchParams.set("profile", state.result);
       }
       
-      window.location.href = url.toString();
+      // Adicionar UTM para rastreamento
+      url.searchParams.set("utm_source", "quiz");
+      url.searchParams.set("utm_medium", "funnel");
+      url.searchParams.set("utm_campaign", `flow${flow}`);
+      
+      // Visitor ID para associar no webhook (rastreamento)
+      const visitorId = getOrCreateVisitorId();
+      url.searchParams.set("ref", visitorId);
+      
+      // Disparar eventos do Meta Pixel ANTES do redirect (assíncrono, não bloqueia)
+      // 1. Custom event: Chegou no Checkout
+      trackChegouCheckout({
+        result_type: state.result || undefined,
+        offer_flow: flow,
+      });
+      
+      // 2. InitiateCheckout padrão
+      trackInitiateCheckout({
+        content_name: state.result || "Quiz Result",
+        value: flow === 1 ? 47 : 97, // Valor estimado da oferta
+        currency: "BRL",
+      });
+      
+      // Pequeno delay para garantir que os eventos sejam enviados antes do redirect
+      setTimeout(() => {
+        window.location.href = url.toString();
+      }, 100);
     } catch (error) {
       console.error('Invalid checkout URL:', error);
     }
-  }, [state.email, state.result, state.offerFlow]);
+  }, [state.email, state.result, state.offerFlow, trackInitiateCheckout, trackChegouCheckout]);
 
   return {
     state,

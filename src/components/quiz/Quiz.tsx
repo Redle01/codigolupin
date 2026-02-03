@@ -1,6 +1,7 @@
 import { useEffect, useRef, lazy, Suspense, memo } from "react";
 import { useQuiz } from "@/hooks/useQuiz";
-import { useFunnelMetrics } from "@/hooks/useFunnelMetrics";
+import { useFunnelMetrics, getOrCreateVisitorId } from "@/hooks/useFunnelMetrics";
+import { useMetaPixel } from "@/hooks/useMetaPixel";
 import { quizConfig } from "@/lib/quizConfig";
 import { QuizLanding } from "./QuizLanding";
 
@@ -45,8 +46,19 @@ export function Quiz() {
   } = useQuiz();
 
   const { metrics, trackPageView } = useFunnelMetrics();
+  const { trackPageView: trackMetaPageView, setExternalId, initWithUser } = useMetaPixel();
   const lastTrackedPage = useRef<string | null>(null);
   const preloadedRef = useRef(false);
+  const pixelInitializedRef = useRef(false);
+
+  // Initialize Meta Pixel with visitor_id
+  useEffect(() => {
+    if (!pixelInitializedRef.current) {
+      const visitorId = getOrCreateVisitorId();
+      setExternalId(visitorId);
+      pixelInitializedRef.current = true;
+    }
+  }, [setExternalId]);
 
   // Track initial visit
   useEffect(() => {
@@ -93,9 +105,19 @@ export function Quiz() {
     // Only track if page changed
     if (currentPage !== lastTrackedPage.current) {
       trackPageView(currentPage as keyof typeof metrics.pageViews);
+      // Disparar Meta Pixel PageView de forma assíncrona (não bloqueia)
+      trackMetaPageView();
       lastTrackedPage.current = currentPage;
     }
-  }, [state.currentStep, state.currentQuestion, trackPageView]);
+  }, [state.currentStep, state.currentQuestion, trackPageView, trackMetaPageView]);
+
+  // Update Meta Pixel with email when captured (Advanced Matching)
+  useEffect(() => {
+    if (state.email && pixelInitializedRef.current) {
+      const visitorId = getOrCreateVisitorId();
+      initWithUser({ visitorId, email: state.email });
+    }
+  }, [state.email, initWithUser]);
 
   const handleEmailSubmit = async () => {
     return submitEmail();

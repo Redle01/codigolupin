@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { subDays } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useFunnelMetrics } from "@/hooks/useFunnelMetrics";
 import { useLeads } from "@/hooks/useLeads";
@@ -10,6 +11,7 @@ import { LeadsTable } from "@/components/admin/LeadsTable";
 import { LeadsTimelineChart } from "@/components/admin/LeadsTimelineChart";
 import { FunnelMetricsInline } from "@/components/admin/FunnelMetricsInline";
 import { VisitorProgressTable } from "@/components/admin/VisitorProgressTable";
+import { DateRangePicker } from "@/components/admin/DateRangePicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +33,13 @@ export default function Admin() {
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [timelinePeriod, setTimelinePeriod] = useState(30);
+  const [dateRange, setDateRange] = useState<{
+    startDate: Date | undefined;
+    endDate: Date | undefined;
+  }>({
+    startDate: subDays(new Date(), 30),
+    endDate: new Date(),
+  });
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Refresh all data callback
@@ -40,12 +48,20 @@ export default function Admin() {
     Promise.all([
       refreshMetrics(),
       fetchStats(),
-      fetchTimeline(timelinePeriod),
+      fetchTimeline({ startDate: dateRange.startDate, endDate: dateRange.endDate }),
       fetchVisitors(),
     ]).finally(() => {
       setTimeout(() => setIsRefreshing(false), 500);
     });
-  }, [refreshMetrics, fetchStats, fetchTimeline, fetchVisitors, timelinePeriod]);
+  }, [refreshMetrics, fetchStats, fetchTimeline, fetchVisitors, dateRange]);
+
+  // Handler para mudança de datas
+  const handleDateChange = useCallback((start: Date | undefined, end: Date | undefined) => {
+    setDateRange({ startDate: start, endDate: end });
+    if (start && end) {
+      fetchTimeline({ startDate: start, endDate: end });
+    }
+  }, [fetchTimeline]);
 
   // Realtime subscription
   const { isConnected, lastUpdate } = useRealtimeAdmin({
@@ -59,10 +75,10 @@ export default function Admin() {
     if (user && isAdmin) {
       refreshMetrics();
       fetchStats();
-      fetchTimeline(timelinePeriod);
+      fetchTimeline({ startDate: dateRange.startDate, endDate: dateRange.endDate });
       fetchVisitors();
     }
-  }, [user, isAdmin, refreshMetrics, fetchStats, fetchTimeline, fetchVisitors, timelinePeriod]);
+  }, [user, isAdmin, refreshMetrics, fetchStats, fetchTimeline, fetchVisitors, dateRange.startDate, dateRange.endDate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,15 +309,17 @@ export default function Admin() {
             
             {/* Timeline Charts */}
             <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-4">Evolução Temporal</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+                <h3 className="text-lg font-semibold">Evolução Temporal</h3>
+                <DateRangePicker
+                  startDate={dateRange.startDate}
+                  endDate={dateRange.endDate}
+                  onDateChange={handleDateChange}
+                />
+              </div>
               <LeadsTimelineChart 
                 timeline={timeline}
                 isLoading={isTimelineLoading}
-                onPeriodChange={(days) => {
-                  setTimelinePeriod(days);
-                  fetchTimeline(days);
-                }}
-                selectedPeriod={timelinePeriod}
               />
             </div>
           </TabsContent>

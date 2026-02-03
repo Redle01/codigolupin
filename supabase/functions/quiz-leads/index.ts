@@ -183,16 +183,36 @@ serve(async (req: Request) => {
     }
 
     if (action === "timeline") {
-      const days = parseInt(url.searchParams.get("days") || "30");
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
+      const startDateParam = url.searchParams.get("startDate");
+      const endDateParam = url.searchParams.get("endDate");
+      const daysParam = url.searchParams.get("days");
+
+      let startDate: Date;
+      let endDate: Date;
+
+      if (startDateParam && endDateParam) {
+        // Usar datas específicas do calendário
+        startDate = new Date(startDateParam);
+        endDate = new Date(endDateParam);
+        // Ajustar endDate para fim do dia
+        endDate.setHours(23, 59, 59, 999);
+      } else {
+        // Fallback para dias (comportamento anterior)
+        const days = parseInt(daysParam || "30");
+        endDate = new Date();
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+      }
+
       const startDateStr = startDate.toISOString();
+      const endDateStr = endDate.toISOString();
 
       // Get leads with dates
       const { data: leads, error: leadsError } = await serviceClient
         .from("quiz_leads")
         .select("created_at")
         .gte("created_at", startDateStr)
+        .lte("created_at", endDateStr)
         .order("created_at", { ascending: true });
 
       if (leadsError) {
@@ -204,6 +224,7 @@ serve(async (req: Request) => {
         .from("quiz_funnel_events")
         .select("created_at, visitor_id, page_key")
         .gte("created_at", startDateStr)
+        .lte("created_at", endDateStr)
         .order("created_at", { ascending: true });
 
       if (eventsError) {
@@ -230,9 +251,8 @@ serve(async (req: Request) => {
       // Generate timeline data for all days in range
       const timeline: Array<{ date: string; leads: number; visitors: number; conversionRate: number }> = [];
       const currentDate = new Date(startDate);
-      const today = new Date();
 
-      while (currentDate <= today) {
+      while (currentDate <= endDate) {
         const dateStr = currentDate.toISOString().split("T")[0];
         const dayLeads = leadsPerDay[dateStr] || 0;
         const dayVisitors = visitorsPerDay[dateStr]?.size || 0;
