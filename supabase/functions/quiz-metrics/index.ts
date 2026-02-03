@@ -20,7 +20,11 @@ interface ResetRequest {
   action: "reset";
 }
 
-type RequestBody = TrackEventRequest | StatsRequest | ResetRequest;
+interface VisitorsRequest {
+  action: "visitors";
+}
+
+type RequestBody = TrackEventRequest | StatsRequest | ResetRequest | VisitorsRequest;
 
 interface FunnelStats {
   pageViews: Record<string, number>;
@@ -191,6 +195,126 @@ serve(async (req: Request): Promise<Response> => {
 
       return new Response(
         JSON.stringify(stats),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Action: visitors - Get detailed visitor progress (ADMIN ONLY)
+    if (action === "visitors") {
+      // Verify admin authentication
+      const { isAdmin, error: authError } = await verifyAdmin(req, supabaseUrl, supabaseAnonKey);
+      
+      if (!isAdmin) {
+        return new Response(
+          JSON.stringify({ error: authError || "Forbidden - Admin access required" }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Get all funnel events
+      const { data: events, error: eventsError } = await supabaseAdmin
+        .from("quiz_funnel_events")
+        .select("visitor_id, page_key, created_at")
+        .order("created_at", { ascending: true });
+
+      if (eventsError) {
+        console.error("Error fetching events:", eventsError);
+        return new Response(
+          JSON.stringify({ error: "Failed to fetch visitor data" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      // Get all leads to associate emails
+      const { data: leads, error: leadsError } = await supabaseAdmin
+        .from("quiz_leads")
+        .select("visitor_id, email, result_type");
+
+      if (leadsError) {
+        console.error("Error fetching leads:", leadsError);
+      }
+
+      // Create leads lookup map
+      const leadsMap = new Map<string, { email: string; result_type: string | null }>();
+      leads?.forEach((lead) => {
+        if (lead.visitor_id) {
+          leadsMap.set(lead.visitor_id, { email: lead.email, result_type: lead.result_type });
+        }
+      });
+
+      // Define funnel step order
+      const stepOrder = [
+        "landing", "question1", "question2", "question3", "question4",
+        "question5", "question6", "email", "question7", "question8", "result"
+      ];
+
+      // Process events into visitor progress
+      const visitorProgress: Record<string, {
+        visitorId: string;
+        email?: string;
+        reachedStep: string;
+        stepsCompleted: string[];
+        abandonedAt?: string;
+        startedAt: string;
+        lastSeenAt: string;
+        profileType?: string;
+      }> = {};
+
+      events?.forEach((event) => {
+        const { visitor_id, page_key, created_at } = event;
+        
+        if (!visitorProgress[visitor_id]) {
+          visitorProgress[visitor_id] = {
+            visitorId: visitor_id,
+            reachedStep: page_key,
+            stepsCompleted: [page_key],
+            startedAt: created_at || new Date().toISOString(),
+            lastSeenAt: created_at || new Date().toISOString(),
+          };
+        } else {
+          if (!visitorProgress[visitor_id].stepsCompleted.includes(page_key)) {
+            visitorProgress[visitor_id].stepsCompleted.push(page_key);
+          }
+          // Update reached step if this step is further in the funnel
+          const currentStepIndex = stepOrder.indexOf(visitorProgress[visitor_id].reachedStep);
+          const newStepIndex = stepOrder.indexOf(page_key);
+          if (newStepIndex > currentStepIndex) {
+            visitorProgress[visitor_id].reachedStep = page_key;
+          }
+          visitorProgress[visitor_id].lastSeenAt = created_at || visitorProgress[visitor_id].lastSeenAt;
+        }
+
+        // Add lead info if available
+        const leadInfo = leadsMap.get(visitor_id);
+        if (leadInfo) {
+          visitorProgress[visitor_id].email = leadInfo.email;
+          visitorProgress[visitor_id].profileType = leadInfo.result_type || undefined;
+        }
+      });
+
+      // Calculate abandoned at for each visitor
+      const visitors = Object.values(visitorProgress).map((v) => {
+        const reachedIndex = stepOrder.indexOf(v.reachedStep);
+        const nextStep = stepOrder[reachedIndex + 1];
+        if (nextStep && v.reachedStep !== "result") {
+          v.abandonedAt = nextStep;
+        }
+        return v;
+      });
+
+      // Calculate stats
+      const completedFunnel = visitors.filter(v => v.reachedStep === "result").length;
+      const reachedEmail = visitors.filter(v => stepOrder.indexOf(v.reachedStep) >= stepOrder.indexOf("email")).length;
+      const abandonedAtEmail = visitors.filter(v => v.reachedStep === "email" && !v.email).length;
+
+      return new Response(
+        JSON.stringify({
+          visitors,
+          totalVisitors: visitors.length,
+          completedFunnel,
+          reachedEmail,
+          abandonedAtEmail,
+        }),
         { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }

@@ -47,28 +47,40 @@ const PROFILE_BADGES: Record<string, { label: string; emoji: string; className: 
   executor: { label: "Executor", emoji: "⚡", className: "bg-green-500/10 text-green-500 border-green-500/20" },
 };
 
+const LIMIT_OPTIONS = [
+  { value: 10, label: "10 por página" },
+  { value: 25, label: "25 por página" },
+  { value: 50, label: "50 por página" },
+  { value: 100, label: "100 por página" },
+];
+
 export function LeadsTable() {
-  const { leads, total, page, limit, isLoading, fetchLeads, exportCSV, setPage } = useLeads();
+  const { leads, total, page, limit, isLoading, fetchLeads, exportCSV, setPage, setLimit } = useLeads();
   const [search, setSearch] = useState("");
   const [resultType, setResultType] = useState("all");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
-    fetchLeads({ page: 1, search, resultType });
+    fetchLeads({ page: 1, search, resultType, limit });
   }, []);
 
   const handleSearch = () => {
-    fetchLeads({ page: 1, search, resultType });
+    fetchLeads({ page: 1, search, resultType, limit });
   };
 
   const handleFilterChange = (value: string) => {
     setResultType(value);
-    fetchLeads({ page: 1, search, resultType: value });
+    fetchLeads({ page: 1, search, resultType: value, limit });
   };
 
   const handlePageChange = (newPage: number) => {
-    fetchLeads({ page: newPage, search, resultType });
+    fetchLeads({ page: newPage, search, resultType, limit });
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    fetchLeads({ page: 1, search, resultType, limit: newLimit });
   };
 
   const handleExport = async () => {
@@ -105,7 +117,7 @@ export function LeadsTable() {
           </Button>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Select value={resultType} onValueChange={handleFilterChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filtrar por perfil" />
@@ -113,6 +125,19 @@ export function LeadsTable() {
             <SelectContent>
               {PROFILE_OPTIONS.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={String(limit)} onValueChange={(v) => handleLimitChange(Number(v))}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {LIMIT_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={String(option.value)}>
                   {option.label}
                 </SelectItem>
               ))}
