@@ -4,16 +4,18 @@ import { useFunnelMetrics } from "@/hooks/useFunnelMetrics";
 import { useLeads } from "@/hooks/useLeads";
 import { useLeadsTimeline } from "@/hooks/useLeadsTimeline";
 import { useRealtimeAdmin } from "@/hooks/useRealtimeAdmin";
+import { useVisitors } from "@/hooks/useVisitors";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { LeadsTable } from "@/components/admin/LeadsTable";
 import { LeadsTimelineChart } from "@/components/admin/LeadsTimelineChart";
 import { FunnelMetricsInline } from "@/components/admin/FunnelMetricsInline";
+import { VisitorProgressTable } from "@/components/admin/VisitorProgressTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Loader2, Shield, ShieldAlert, BarChart3, LayoutDashboard, Users, RefreshCw } from "lucide-react";
+import { LogOut, Loader2, Shield, ShieldAlert, BarChart3, LayoutDashboard, Users, RefreshCw, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -23,6 +25,7 @@ export default function Admin() {
   const { metrics, resetMetrics, refreshMetrics, getDropoffRate, getConversionRate } = useFunnelMetrics();
   const { stats, fetchStats } = useLeads();
   const { timeline, isLoading: isTimelineLoading, fetchTimeline } = useLeadsTimeline();
+  const { visitors, stats: visitorStats, isLoading: isVisitorsLoading, fetchVisitors } = useVisitors();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,10 +41,11 @@ export default function Admin() {
       refreshMetrics(),
       fetchStats(),
       fetchTimeline(timelinePeriod),
+      fetchVisitors(),
     ]).finally(() => {
       setTimeout(() => setIsRefreshing(false), 500);
     });
-  }, [refreshMetrics, fetchStats, fetchTimeline, timelinePeriod]);
+  }, [refreshMetrics, fetchStats, fetchTimeline, fetchVisitors, timelinePeriod]);
 
   // Realtime subscription
   const { isConnected, lastUpdate } = useRealtimeAdmin({
@@ -56,8 +60,9 @@ export default function Admin() {
       refreshMetrics();
       fetchStats();
       fetchTimeline(timelinePeriod);
+      fetchVisitors();
     }
-  }, [user, isAdmin, refreshMetrics, fetchStats, fetchTimeline, timelinePeriod]);
+  }, [user, isAdmin, refreshMetrics, fetchStats, fetchTimeline, fetchVisitors, timelinePeriod]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,10 +230,14 @@ export default function Admin() {
       {/* Main content with tabs */}
       <main className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full max-w-xs grid-cols-2">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <LayoutDashboard className="h-4 w-4" />
               <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="visitors" className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              <span className="hidden sm:inline">Visitantes</span>
             </TabsTrigger>
             <TabsTrigger value="leads" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -277,6 +286,7 @@ export default function Admin() {
                   metrics={metrics}
                   getDropoffRate={getDropoffRate}
                   getConversionRate={getConversionRate}
+                  flowCounts={stats?.flowCounts}
                 />
               </CardContent>
             </Card>
@@ -294,6 +304,59 @@ export default function Admin() {
                 selectedPeriod={timelinePeriod}
               />
             </div>
+          </TabsContent>
+
+          <TabsContent value="visitors" className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">Rastreamento de Visitantes</h2>
+                <p className="text-muted-foreground">Jornada individual de cada visitante no funil</p>
+              </div>
+              <div className="flex gap-2">
+                {visitorStats && (
+                  <div className="flex gap-4 text-sm">
+                    <span className="text-muted-foreground">
+                      Total: <span className="font-semibold text-foreground">{visitorStats.totalVisitors}</span>
+                    </span>
+                    <span className="text-muted-foreground">
+                      Completaram: <span className="font-semibold text-primary">{visitorStats.completedFunnel}</span>
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Flow Stats Cards */}
+            {visitorStats?.flowStats && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="bg-primary/5 border-primary/20">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-muted-foreground mb-1">Leads Oferta 1</p>
+                    <p className="text-2xl font-bold text-primary">{visitorStats.flowStats.flow1.leads}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-primary/5 border-primary/20">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-muted-foreground mb-1">Conversões Oferta 1</p>
+                    <p className="text-2xl font-bold text-primary">{visitorStats.flowStats.flow1.completions}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-secondary/50 border-secondary">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-muted-foreground mb-1">Leads Oferta 2</p>
+                    <p className="text-2xl font-bold text-secondary-foreground">{visitorStats.flowStats.flow2.leads}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-secondary/50 border-secondary">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-muted-foreground mb-1">Conversões Oferta 2</p>
+                    <p className="text-2xl font-bold text-secondary-foreground">{visitorStats.flowStats.flow2.completions}</p>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+            
+            <VisitorProgressTable visitors={visitors} isLoading={isVisitorsLoading} />
           </TabsContent>
 
           <TabsContent value="leads" className="space-y-6">

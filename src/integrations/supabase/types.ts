@@ -41,6 +41,7 @@ export type Database = {
           created_at: string | null
           email: string
           id: string
+          offer_flow: number | null
           result_type: string | null
           visitor_id: string | null
         }
@@ -49,6 +50,7 @@ export type Database = {
           created_at?: string | null
           email: string
           id?: string
+          offer_flow?: number | null
           result_type?: string | null
           visitor_id?: string | null
         }
@@ -57,6 +59,7 @@ export type Database = {
           created_at?: string | null
           email?: string
           id?: string
+          offer_flow?: number | null
           result_type?: string | null
           visitor_id?: string | null
         }

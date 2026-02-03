@@ -62,7 +62,7 @@ serve(async (req: Request) => {
     if (action === "list") {
       let query = serviceClient
         .from("quiz_leads")
-        .select("id, email, result_type, created_at, answers, visitor_id", { count: "exact" });
+        .select("id, email, result_type, created_at, answers, visitor_id, offer_flow", { count: "exact" });
 
       if (search) {
         query = query.ilike("email", `%${search}%`);
@@ -88,7 +88,7 @@ serve(async (req: Request) => {
     if (action === "export") {
       let query = serviceClient
         .from("quiz_leads")
-        .select("email, result_type, created_at, answers, visitor_id");
+        .select("email, result_type, created_at, answers, visitor_id, offer_flow");
 
       if (search) {
         query = query.ilike("email", `%${search}%`);
@@ -104,12 +104,13 @@ serve(async (req: Request) => {
       }
 
       // Generate CSV
-      const headers = ["Email", "Perfil", "Data", "Visitor ID", "Respostas"];
+      const headers = ["Email", "Perfil", "Data", "Visitor ID", "Oferta", "Respostas"];
       const rows = (leads || []).map((lead) => [
         lead.email,
         lead.result_type || "",
         new Date(lead.created_at).toLocaleString("pt-BR"),
         lead.visitor_id || "",
+        lead.offer_flow ? `Oferta ${lead.offer_flow}` : "",
         JSON.stringify(lead.answers || {}),
       ]);
 
@@ -126,10 +127,10 @@ serve(async (req: Request) => {
     }
 
     if (action === "stats") {
-      // Get lead stats
+      // Get lead stats with offer_flow
       const { data: leads, error: leadsError } = await serviceClient
         .from("quiz_leads")
-        .select("result_type");
+        .select("result_type, offer_flow");
 
       if (leadsError) {
         throw leadsError;
@@ -155,6 +156,14 @@ serve(async (req: Request) => {
         resultCounts[type] = (resultCounts[type] || 0) + 1;
       });
 
+      // Count by offer flow
+      const flowCounts = { flow1: 0, flow2: 0, unknown: 0 };
+      leads?.forEach((lead) => {
+        if (lead.offer_flow === 1) flowCounts.flow1++;
+        else if (lead.offer_flow === 2) flowCounts.flow2++;
+        else flowCounts.unknown++;
+      });
+
       const mostCommon = Object.entries(resultCounts).sort((a, b) => b[1] - a[1])[0];
 
       return new Response(
@@ -164,6 +173,7 @@ serve(async (req: Request) => {
           conversionRate: parseFloat(conversionRate),
           mostCommonProfile: mostCommon ? { type: mostCommon[0], count: mostCommon[1] } : null,
           resultCounts,
+          flowCounts,
         }),
         {
           status: 200,

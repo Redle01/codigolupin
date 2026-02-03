@@ -8,6 +8,7 @@ export interface Lead {
   created_at: string;
   answers: Record<string, any> | null;
   visitor_id: string | null;
+  offer_flow: number | null;
 }
 
 export interface LeadStats {
@@ -16,6 +17,7 @@ export interface LeadStats {
   conversionRate: number;
   mostCommonProfile: { type: string; count: number } | null;
   resultCounts: Record<string, number>;
+  flowCounts: { flow1: number; flow2: number; unknown: number };
 }
 
 interface UseLeadsReturn {

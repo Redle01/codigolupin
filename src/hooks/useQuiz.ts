@@ -13,6 +13,7 @@ export interface QuizState {
   email: string;
   result: ResultType | null;
   isSubmitting: boolean;
+  offerFlow: 1 | 2 | null; // Fluxo de oferta baseado na Q7
 }
 
 const getInitialState = (): QuizState => ({
@@ -22,7 +23,17 @@ const getInitialState = (): QuizState => ({
   email: "",
   result: null,
   isSubmitting: false,
+  offerFlow: null,
 });
+
+// Calcula o fluxo de oferta baseado na resposta da Questão 7
+function getOfferFlow(answers: Record<number, string>): 1 | 2 | null {
+  const question7Answer = answers[6]; // Q7 está no índice 6 (0-indexed)
+  if (!question7Answer) return null;
+  
+  const flowMapping = quizConfig.question7FlowMapping;
+  return flowMapping[question7Answer as keyof typeof flowMapping] || null;
+}
 
 export function useQuiz() {
   const [state, setState] = useState<QuizState>(() => {
@@ -39,6 +50,7 @@ export function useQuiz() {
             return {
               ...parsed,
               isSubmitting: false, // Always reset submitting state
+              offerFlow: parsed.offerFlow || null, // Preserve offerFlow
             };
           } catch {
             // If parsing fails, use default state
@@ -63,6 +75,7 @@ export function useQuiz() {
       answers: state.answers,
       email: state.email,
       result: state.result,
+      offerFlow: state.offerFlow,
     };
     localStorage.setItem(QUIZ_STATE_STORAGE_KEY, JSON.stringify(stateToStore));
   }, [state.currentStep, state.currentQuestion, state.answers, state.email, state.result]);
@@ -76,18 +89,24 @@ export function useQuiz() {
       const newAnswers = { ...prev.answers, [questionId]: answerId };
       const nextQuestion = prev.currentQuestion + 1;
       
+      // Calcular offerFlow após responder Q7 (índice 6)
+      let offerFlow = prev.offerFlow;
+      if (questionId === 6) { // Q7 respondida
+        offerFlow = getOfferFlow(newAnswers);
+      }
+      
       // After question 6 (index 5), show email capture
       if (nextQuestion === 6) {
-        return { ...prev, answers: newAnswers, currentStep: "email" };
+        return { ...prev, answers: newAnswers, offerFlow, currentStep: "email" };
       }
       
       // If all questions answered, show loading then result
       if (nextQuestion >= quizQuestions.length) {
         const result = calculateResult(newAnswers);
-        return { ...prev, answers: newAnswers, result, currentStep: "loading" };
+        return { ...prev, answers: newAnswers, offerFlow, result, currentStep: "loading" };
       }
       
-      return { ...prev, answers: newAnswers, currentQuestion: nextQuestion };
+      return { ...prev, answers: newAnswers, offerFlow, currentQuestion: nextQuestion };
     });
   }, []);
 
@@ -128,6 +147,7 @@ export function useQuiz() {
           email: state.email,
           visitor_id: visitorId,
           answers: state.answers,
+          offer_flow: state.offerFlow,
         },
       });
 
@@ -144,7 +164,7 @@ export function useQuiz() {
       setState((prev) => ({ ...prev, isSubmitting: false }));
       return true; // Continue anyway
     }
-  }, [state.email, state.answers]);
+  }, [state.email, state.answers, state.offerFlow]);
 
   // Update result type after quiz completion
   const updateResultType = useCallback(async () => {
@@ -153,19 +173,20 @@ export function useQuiz() {
     try {
       const visitorId = getOrCreateVisitorId();
       
-      // Update the lead with result type
+      // Update the lead with result type and offer flow
       await supabase.functions.invoke("quiz-submit-email", {
         body: {
           email: state.email,
           visitor_id: visitorId,
           result_type: state.result,
           answers: state.answers,
+          offer_flow: state.offerFlow,
         },
       });
     } catch (error) {
       console.error("Error updating result type:", error);
     }
-  }, [state.email, state.result, state.answers]);
+  }, [state.email, state.result, state.answers, state.offerFlow]);
 
   // Call updateResultType when result is calculated
   useEffect(() => {
@@ -175,7 +196,12 @@ export function useQuiz() {
   }, [state.result, state.email, updateResultType]);
 
   const redirectToCheckout = useCallback(() => {
-    const checkoutUrl = quizConfig.checkoutUrl;
+    // Determinar URL de checkout baseada no fluxo de oferta
+    const flow = state.offerFlow || 1; // Default para fluxo 1
+    const checkoutUrl = flow === 1 
+      ? quizConfig.checkoutUrls.flow1 
+      : quizConfig.checkoutUrls.flow2;
+    
     if (!checkoutUrl) return;
     
     // Allowlist of permitted checkout domains
@@ -212,7 +238,7 @@ export function useQuiz() {
     } catch (error) {
       console.error('Invalid checkout URL:', error);
     }
-  }, [state.email, state.result]);
+  }, [state.email, state.result, state.offerFlow]);
 
   return {
     state,

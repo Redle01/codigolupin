@@ -11,6 +11,7 @@ interface SubmitEmailRequest {
   visitor_id: string;
   result_type?: string;
   answers?: Record<string, string>;
+  offer_flow?: number;
 }
 
 // Rate limit configuration
@@ -37,7 +38,7 @@ serve(async (req: Request): Promise<Response> => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { email, visitor_id, result_type, answers }: SubmitEmailRequest = await req.json();
+    const { email, visitor_id, result_type, answers, offer_flow }: SubmitEmailRequest = await req.json();
 
     if (!email) {
       return new Response(
@@ -109,6 +110,7 @@ serve(async (req: Request): Promise<Response> => {
         visitor_id: visitor_id || null,
         result_type: result_type || null,
         answers: answers || null,
+        offer_flow: offer_flow || null,
       })
       .select()
       .single();
