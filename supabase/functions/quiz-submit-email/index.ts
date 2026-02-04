@@ -102,7 +102,50 @@ serve(async (req: Request): Promise<Response> => {
       }
     }
 
-    // Insert lead
+    // Check for existing lead with same visitor_id (UPSERT logic)
+    let existingLeadId: string | null = null;
+    if (visitor_id) {
+      const { data: existingLead } = await supabase
+        .from("quiz_leads")
+        .select("id")
+        .eq("visitor_id", visitor_id)
+        .maybeSingle();
+      
+      if (existingLead) {
+        existingLeadId = existingLead.id;
+      }
+    }
+
+    if (existingLeadId) {
+      // UPDATE existing lead - merge data (only update fields that have values)
+      const updateData: Record<string, unknown> = {};
+      if (result_type) updateData.result_type = result_type;
+      if (offer_flow) updateData.offer_flow = offer_flow;
+      if (answers && Object.keys(answers).length > 0) updateData.answers = answers;
+      
+      const { data, error } = await supabase
+        .from("quiz_leads")
+        .update(updateData)
+        .eq("id", existingLeadId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating lead:", error);
+        return new Response(
+          JSON.stringify({ error: "Failed to update lead" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
+      console.log("Lead updated successfully:", data.id);
+      return new Response(
+        JSON.stringify({ success: true, id: data.id, updated: true }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // INSERT new lead
     const { data, error } = await supabase
       .from("quiz_leads")
       .insert({
