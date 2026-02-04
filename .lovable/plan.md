@@ -1,82 +1,48 @@
 
-# Plano: Fonte Archivo Exclusiva - Remoção de system-ui, sans-serif
+# Plano: Alterar Headlines e Questões para Fonte Archivo
 
-## Resumo Executivo
+## Problema Identificado
 
-Este plano remove completamente `system-ui, sans-serif` do stack de fontes, deixando exclusivamente **Archivo** como fonte principal em todo o funil. A mudança é simples e afeta apenas 2 arquivos.
+Os seguintes elementos estão usando `font-serif-display` (Playfair Display) em vez de Archivo:
 
----
-
-## Análise do Estado Atual
-
-### Ocorrências Identificadas
-
-| Arquivo | Linha | Valor Atual |
-|---------|-------|-------------|
-| `index.html` | 17 | `font-family: 'Archivo', system-ui, sans-serif;` |
-| `src/index.css` | 107 | `font-family: 'Archivo', system-ui, sans-serif;` |
-
-**Total: 2 ocorrências a modificar**
+| Arquivo | Linha | Elemento | Classe Atual |
+|---------|-------|----------|--------------|
+| `QuizLanding.tsx` | 45 | Headline principal | `font-serif-display` |
+| `QuizQuestion.tsx` | 85 | Pergunta do quiz (h2) | `font-serif-display` |
 
 ---
 
 ## Arquivos a Modificar
 
-### 1. `index.html` (Critical CSS - linha 17)
+### 1. `src/components/quiz/QuizLanding.tsx` (linha 45)
 
-```html
-<!-- Antes -->
-font-family: 'Archivo', system-ui, sans-serif;
+```tsx
+// Antes
+className="font-serif-display text-xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-5 leading-tight"
 
-<!-- Depois -->
-font-family: 'Archivo';
+// Depois
+className="text-xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-5 leading-tight"
 ```
 
-### 2. `src/index.css` (linha 107)
+### 2. `src/components/quiz/QuizQuestion.tsx` (linha 85)
 
-```css
-/* Antes */
-font-family: 'Archivo', system-ui, sans-serif;
+```tsx
+// Antes
+className="font-serif-display text-xl md:text-3xl font-bold text-center mb-6 md:mb-10 text-foreground leading-relaxed"
 
-/* Depois */
-font-family: 'Archivo';
+// Depois
+className="text-xl md:text-3xl font-bold text-center mb-6 md:mb-10 text-foreground leading-relaxed"
 ```
 
 ---
 
-## Impacto da Mudança
+## Resultado
 
-### Elementos Afetados (Todos usam Archivo):
-
-| Categoria | Comportamento |
-|-----------|---------------|
-| Headings | Herdam do body → Archivo |
-| Textos | Herdam do body → Archivo |
-| Botões | Herdam do body → Archivo |
-| Perguntas do quiz | Herdam do body → Archivo |
-| Labels | Herdam do body → Archivo |
-| Mensagens auxiliares | Herdam do body → Archivo |
-| Inputs | Herdam do body → Archivo |
-
-**Nota:** A classe `.font-serif-display` continua usando `'Playfair Display', Georgia, serif` para títulos estilizados - isso é intencional e não será alterado.
-
----
-
-## Fallback Seguro
-
-Sem `system-ui, sans-serif`:
-- Se Archivo não carregar, o navegador usará sua fonte padrão
-- A fonte está carregada via Google Fonts com **preload não-bloqueante**
-- O Google Fonts fornece múltiplos pesos (400, 500, 600, 700) que servem como fallback interno da família
-
-### Carregamento da Fonte (já configurado):
-```html
-<link 
-  rel="preload" 
-  as="style" 
-  href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700..."
-/>
-```
+Após a alteração:
+- Headline da landing page usará **Archivo** (herdado do body)
+- Todas as perguntas do quiz usarão **Archivo** (herdado do body)
+- Hierarquia visual mantida (tamanhos e pesos preservados)
+- Consistência tipográfica em todo o funil
 
 ---
 
@@ -84,18 +50,7 @@ Sem `system-ui, sans-serif`:
 
 - Zero alteração em layout
 - Zero alteração em espaçamentos
-- Zero alteração em responsividade  
-- Zero alteração em hierarquia visual
-- Zero alteração em performance (mesma fonte, apenas stack menor)
+- Zero alteração em responsividade
+- Zero alteração em animações
 - Zero alteração em tracking/integrações
-- Consistência tipográfica desktop/mobile mantida
-
----
-
-## Resultado Esperado
-
-Após a alteração:
-- **Arquivo fonte exclusiva**: Archivo
-- **Sem fallbacks genéricos**: Removido system-ui, sans-serif
-- **Hierarquia preservada**: Archivo (corpo) + Playfair Display (títulos decorativos)
-- **Todos os elementos** renderizando com Archivo (exceto `.font-serif-display`)
+- Performance inalterada
