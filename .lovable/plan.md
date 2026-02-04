@@ -1,202 +1,306 @@
 
-# Plano: Ajustes Mobile na Landing Page
+# Plano: Otimização Extrema de Performance do Funil
 
-## Resumo Executivo
-
-Este plano implementa melhorias de responsividade mobile na primeira página do funil, removendo a coroa e ajustando espaçamentos para uma experiência mais limpa e centralizada no mobile, sem afetar o desktop.
-
----
-
-## Alterações a Realizar
-
-### 1. Remover Ícone da Coroa
-
-**Arquivo:** `src/components/quiz/QuizLanding.tsx`
-
-| Ação | Linhas | Descrição |
-|------|--------|-----------|
-| Remover import `Crown` | 2 | Não será mais utilizado |
-| Remover bloco da coroa | 31-38 | Remover completamente o ícone |
-
-```tsx
-// Antes (linha 2)
-import { Crown, Sparkles, Users } from "lucide-react";
-
-// Depois
-import { Sparkles, Users } from "lucide-react";
-```
-
-```tsx
-// Remover completamente (linhas 31-38)
-<m.div
-  initial={{ scale: 0 }}
-  animate={{ scale: 1 }}
-  transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-  className="inline-flex items-center justify-center w-14 h-14 md:w-18 md:h-18 mb-4 md:mb-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30"
->
-  <Crown className="w-7 h-7 md:w-9 md:h-9 text-primary" />
-</m.div>
-```
+## Objetivo
+Abrir a primeira página em **menos de 3 segundos** (meta: < 2s) em Wi-Fi, 4G e 5G, mantendo 100% do design, copy, estrutura, responsividade e funcionalidades.
 
 ---
 
-### 2. Ajustes de Espaçamento Mobile
+## Análise do Estado Atual
 
-**Container principal (linha 14):**
+### Pontos Positivos Já Implementados
+- Lazy loading de componentes (QuizQuestion, EmailCapture, QuizLoading, QuizResult)
+- LazyMotion com domAnimation (framer-motion otimizado)
+- Tracking assíncrono via requestIdleCallback
+- CSS crítico inline no index.html
+- Preload não-bloqueante de fontes
+- Memoização de componentes (memo)
+- GPU acceleration para animações de partículas
+
+### Oportunidades de Otimização Identificadas
+
+| Categoria | Problema | Impacto |
+|-----------|----------|---------|
+| Fonts | Carrega 2 fontes (Archivo + Playfair Display) | ~50-80KB |
+| Bundle | Muitos componentes UI não utilizados no funil | ~100KB+ |
+| Scripts | Meta Pixel carrega síncronamente | Bloqueia render |
+| Supabase | Client inicializa no bundle principal | ~30KB |
+| Particles | 8 partículas com animação CSS contínua | CPU usage |
+| Preload | Falta preconnect para Supabase | Latência |
+
+---
+
+## Otimizações a Implementar
+
+### 1. Adiar Carregamento do Meta Pixel (index.html)
+
+O Meta Pixel está carregando síncronamente e bloqueando o render inicial. Vamos adiar para após o carregamento da página.
+
+**Arquivo:** `index.html`
+
+```html
+<!-- Antes: Meta Pixel síncrono -->
+<script>
+!function(f,b,e,v,n,t,s)
+{...}
+fbq('init', '1585747689119987');
+</script>
+
+<!-- Depois: Meta Pixel adiado para após window.load -->
+<script>
+window.addEventListener('load', function() {
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1585747689119987');
+});
+</script>
+```
+
+**Benefício:** ~200-300ms de melhoria no First Contentful Paint (FCP)
+
+---
+
+### 2. Adicionar Preconnects Críticos (index.html)
+
+Adicionar preconnects para domínios críticos que serão acessados logo após o carregamento.
+
+**Adicionar após os preconnects de fontes:**
+
+```html
+<!-- Preconnect to Supabase for faster API calls -->
+<link rel="preconnect" href="https://enbhyeddogbocxgttkkd.supabase.co" crossorigin />
+
+<!-- DNS prefetch for Meta Pixel (loaded after page load) -->
+<link rel="dns-prefetch" href="https://connect.facebook.net" />
+```
+
+**Benefício:** ~100-150ms de economia em conexões subsequentes
+
+---
+
+### 3. Remover Fonte Playfair Display (index.html)
+
+A fonte Playfair Display não é mais utilizada no funil (removemos font-serif-display anteriormente). Remover do preload economiza ~40KB.
+
+**Alterar o link de fontes de:**
+```html
+href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+```
+
+**Para:**
+```html
+href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap"
+```
+
+**Benefício:** ~40KB menos de download, ~100-200ms de economia
+
+---
+
+### 4. Otimizar Renderização do ParticleBackground
+
+Reduzir o número de partículas de 8 para 5 e simplificar animações para reduzir uso de CPU.
+
+**Arquivo:** `src/components/quiz/ParticleBackground.tsx`
+
 ```tsx
+// Antes: 8 partículas
+Array.from({ length: 8 }, ...)
+
+// Depois: 5 partículas (suficiente para efeito visual)
+Array.from({ length: 5 }, ...)
+```
+
+Também adicionar `content-visibility: auto` para partículas fora da viewport.
+
+**Benefício:** ~15% menos uso de CPU em dispositivos móveis
+
+---
+
+### 5. Otimizar Critical Rendering Path (index.html)
+
+Expandir o CSS crítico inline para incluir estilos da landing page, eliminando FOUC (Flash of Unstyled Content).
+
+**Adicionar ao bloco de CSS crítico:**
+
+```html
+<style>
+  body { 
+    background-color: hsl(0 0% 4%); 
+    color: hsl(45 29% 90%);
+    margin: 0;
+    font-family: 'Archivo';
+  }
+  #root { 
+    min-height: 100vh; 
+    min-height: 100dvh;
+  }
+  /* Critical above-the-fold styles */
+  .bg-background { background-color: hsl(0 0% 4%); }
+  .min-h-screen { min-height: 100vh; min-height: 100dvh; }
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .items-center { align-items: center; }
+  .justify-center { justify-content: center; }
+  .text-center { text-align: center; }
+</style>
+```
+
+**Benefício:** Elimina flash branco, melhora LCP em ~50-100ms
+
+---
+
+### 6. Lazy Load do Supabase Client para Landing (vite.config.ts)
+
+Configurar o Vite para separar o chunk do Supabase, permitindo que a landing page carregue sem o SDK completo.
+
+**Arquivo:** `vite.config.ts`
+
+```ts
+build: {
+  rollupOptions: {
+    output: {
+      manualChunks: {
+        'vendor-supabase': ['@supabase/supabase-js'],
+        'vendor-framer': ['framer-motion'],
+        'vendor-react-query': ['@tanstack/react-query'],
+      }
+    }
+  }
+}
+```
+
+**Benefício:** Chunks menores, carregamento paralelo mais eficiente
+
+---
+
+### 7. Otimizar useQuiz para Lazy Supabase (src/hooks/useQuiz.ts)
+
+O Supabase só precisa ser carregado quando o usuário submete o email (não na landing).
+
+**Alterar import estático para dinâmico:**
+
+```ts
 // Antes
-className="min-h-screen flex flex-col items-center justify-start md:justify-center px-4 py-6 md:px-4 md:py-8 relative"
+import { supabase } from "@/integrations/supabase/client";
 
-// Depois - Adiciona padding horizontal mais confortável no mobile
-className="min-h-screen flex flex-col items-center justify-center px-5 py-8 md:px-4 md:py-8 relative"
+// Depois - lazy import apenas quando necessário
+const getSupabase = async () => {
+  const { supabase } = await import("@/integrations/supabase/client");
+  return supabase;
+};
+
+// No submitEmail:
+const supabase = await getSupabase();
 ```
 
-Alterações:
-- `justify-start md:justify-center` → `justify-center` (centraliza verticalmente em todas as telas)
-- `px-4` → `px-5` (padding horizontal ligeiramente maior no mobile para respiração)
-- `py-6` → `py-8` (padding vertical mais generoso no mobile)
+**Benefício:** ~30KB a menos no bundle inicial
 
 ---
 
-### 3. Ajustes na Headline (linha 45)
+### 8. Otimizar useFunnelMetrics para Tracking Lazy (src/hooks/useFunnelMetrics.ts)
+
+Similar ao acima, lazy load do Supabase para tracking.
+
+```ts
+// Async tracking com lazy import
+async function sendTrackingEvent(visitorId: string, page: string) {
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+    await supabase.functions.invoke("quiz-metrics", {...});
+  } catch (error) {
+    console.debug("Tracking error:", error);
+  }
+}
+```
+
+**Benefício:** Landing page carrega sem Supabase SDK
+
+---
+
+### 9. Remover CSS Não Utilizado (src/index.css)
+
+Remover a classe `.font-serif-display` que não é mais utilizada no funil.
+
+```css
+/* Remover estas linhas (112-114) */
+.font-serif-display {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+```
+
+**Benefício:** CSS mais limpo, microsegundos de parsing
+
+---
+
+### 10. Adicionar Resource Hints para Próxima Etapa (src/components/quiz/Quiz.tsx)
+
+Adicionar prefetch para chunks da próxima etapa baseado no comportamento do usuário.
 
 ```tsx
-// Antes
-className="text-xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-5 leading-tight"
-
-// Depois - Aumenta tamanho mobile e melhora espaçamento
-className="text-[22px] md:text-3xl lg:text-4xl font-bold mb-4 md:mb-5 leading-snug md:leading-tight px-2 md:px-0"
+// No useEffect de preload, adicionar:
+if (state.currentStep === "landing") {
+  // Preload QuizQuestion e também prefetch do chunk
+  const link = document.createElement('link');
+  link.rel = 'prefetch';
+  link.href = '/assets/quiz-question-[hash].js'; // Será resolvido pelo Vite
+  document.head.appendChild(link);
+}
 ```
 
-Alterações:
-- `text-xl` → `text-[22px]` (tamanho ligeiramente maior para melhor legibilidade)
-- `mb-3` → `mb-4` (mais espaço após headline no mobile)
-- `leading-tight` → `leading-snug md:leading-tight` (espaçamento entre linhas mais confortável)
-- Adiciona `px-2 md:px-0` (padding horizontal interno no mobile)
+**Alternativa mais robusta:** Usar import() que já faz prefetch automático no Vite.
 
 ---
 
-### 4. Ajustes na Subheadline (linha 58)
+## Resumo das Alterações por Arquivo
 
-```tsx
-// Antes
-className="text-sm md:text-base lg:text-lg text-muted-foreground mb-6 md:mb-10 max-w-xl mx-auto leading-relaxed"
-
-// Depois - Melhora legibilidade mobile
-className="text-[15px] md:text-base lg:text-lg text-muted-foreground mb-8 md:mb-10 max-w-xl mx-auto leading-relaxed px-1 md:px-0"
-```
-
-Alterações:
-- `text-sm` → `text-[15px]` (ligeiramente maior para conforto de leitura)
-- `mb-6` → `mb-8` (mais espaço antes do CTA no mobile)
-- Adiciona `px-1 md:px-0` (pequeno padding interno)
+| Arquivo | Tipo de Alteração |
+|---------|-------------------|
+| `index.html` | Adiar Meta Pixel, adicionar preconnects, remover Playfair Display, expandir CSS crítico |
+| `src/components/quiz/ParticleBackground.tsx` | Reduzir partículas de 8 para 5 |
+| `src/hooks/useQuiz.ts` | Lazy import do Supabase |
+| `src/hooks/useFunnelMetrics.ts` | Lazy import do Supabase |
+| `src/index.css` | Remover .font-serif-display |
+| `vite.config.ts` | Adicionar manualChunks para code splitting otimizado |
 
 ---
 
-### 5. Ajustes no Botão CTA (linha 74)
+## Impacto Estimado de Performance
 
-```tsx
-// Antes
-className="bg-gradient-gold text-primary-foreground font-bold text-base md:text-lg px-6 md:px-10 py-5 md:py-6 rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-105"
-
-// Depois - Largura máxima no mobile para melhor toque
-className="bg-gradient-gold text-primary-foreground font-bold text-[15px] md:text-lg px-5 md:px-10 py-5 md:py-6 rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-105 w-full max-w-[320px] md:w-auto md:max-w-none"
-```
-
-Alterações:
-- `text-base` → `text-[15px]` (tamanho otimizado para mobile)
-- `px-6` → `px-5` (ajuste de padding)
-- Adiciona `w-full max-w-[320px] md:w-auto md:max-w-none` (largura controlada no mobile)
-
----
-
-### 6. Ajustes no Texto Auxiliar (linha 86)
-
-```tsx
-// Antes
-className="text-xs md:text-sm text-muted-foreground mt-4 md:mt-5 italic"
-
-// Depois
-className="text-[13px] md:text-sm text-muted-foreground mt-5 md:mt-5 italic px-4 md:px-0"
-```
-
-Alterações:
-- `text-xs` → `text-[13px]` (ligeiramente maior para legibilidade)
-- `mt-4` → `mt-5` (espaçamento uniforme)
-- Adiciona `px-4 md:px-0` (padding horizontal no mobile)
-
----
-
-### 7. Ajustes no Social Proof (linha 96)
-
-```tsx
-// Antes
-className="flex items-center justify-center gap-2 mt-4 md:mt-6 text-muted-foreground"
-
-// Depois
-className="flex items-center justify-center gap-2 mt-5 md:mt-6 text-muted-foreground"
-```
-
-Alteração:
-- `mt-4` → `mt-5` (espaçamento mais uniforme no mobile)
-
----
-
-## Estrutura Final Mobile
-
-```text
-┌────────────────────────────────────────────┐
-│                   (8px)                    │
-│                                            │
-│   Por Que Mulheres Te Veem Apenas Como     │
-│                 "Amigo"                    │
-│  (Mesmo Você Sendo Um Bom Partido)?        │
-│                                            │
-│              (4px margin)                  │
-│                                            │
-│  Descubra o ÚNICO erro que está sabotando  │
-│  suas chances com mulheres de qualidade... │
-│                                            │
-│              (8px margin)                  │
-│                                            │
-│  ┌──────────────────────────────────────┐  │
-│  │   DESCOBRIR MEU ERRO FATAL AGORA     │  │
-│  └──────────────────────────────────────┘  │
-│                                            │
-│              (5px margin)                  │
-│                                            │
-│   "Apenas 2 minutos podem mudar sua..."   │
-│                                            │
-│              (5px margin)                  │
-│                                            │
-│       👥 12.847 homens já descobriram      │
-│                                            │
-└────────────────────────────────────────────┘
-```
+| Métrica | Antes (estimado) | Depois (estimado) |
+|---------|------------------|-------------------|
+| FCP (First Contentful Paint) | ~1.5s | ~0.8s |
+| LCP (Largest Contentful Paint) | ~2.5s | ~1.5s |
+| TTI (Time to Interactive) | ~3.0s | ~2.0s |
+| Bundle inicial | ~180KB | ~120KB |
+| Total transferido | ~280KB | ~200KB |
 
 ---
 
 ## Garantias
 
-- Copy inalterada
-- Fonte inalterada (Archivo)
-- Estrutura do funil preservada
-- Ordem dos elementos mantida
-- Design desktop sem alterações (todas mudanças com prefixo `md:`)
-- Identidade visual premium preservada
-- Performance mantida (menos um componente animado)
-- CTA em destaque e centralizado
+- Copy 100% inalterada
+- Design 100% preservado
+- Estrutura do funil mantida
+- Responsividade intacta
+- Todas as funcionalidades operacionais
+- Rastreamento Meta Pixel funcionando (apenas adiado)
+- Métricas do funil funcionando normalmente
+- Transições e animações suaves
+- Experiência do usuário idêntica
 
 ---
 
-## Comparativo Visual
+## Validação Pós-Implementação
 
-| Aspecto | Antes | Depois |
-|---------|-------|--------|
-| Coroa | Visível | Removida |
-| Centralização vertical | `justify-start` no mobile | `justify-center` |
-| Headline | `text-xl` | `text-[22px]` |
-| Subheadline | `text-sm` | `text-[15px]` |
-| Espaçamento pré-CTA | `mb-6` | `mb-8` |
-| Botão CTA | Largura auto | `max-w-[320px]` no mobile |
-| Padding horizontal | `px-4` | `px-5` |
+1. Testar carregamento em Wi-Fi, 4G simulado e 5G
+2. Verificar que Meta Pixel dispara PageView após load
+3. Confirmar que tracking de métricas funciona
+4. Testar navegação completa pelo funil
+5. Validar que animações continuam fluidas
+6. Confirmar checkout redirect funcionando
