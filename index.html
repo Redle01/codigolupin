@@ -14,27 +14,37 @@
         background-color: hsl(0 0% 4%); 
         color: hsl(45 29% 90%);
         margin: 0;
-        font-family: 'Archivo';
+        font-family: 'Archivo', sans-serif;
       }
       #root { 
         min-height: 100vh; 
         min-height: 100dvh;
       }
+      /* Critical above-the-fold styles */
+      .bg-background { background-color: hsl(0 0% 4%); }
+      .min-h-screen { min-height: 100vh; min-height: 100dvh; }
+      .flex { display: flex; }
+      .flex-col { flex-direction: column; }
+      .items-center { align-items: center; }
+      .justify-center { justify-content: center; }
+      .text-center { text-align: center; }
     </style>
     
     <!-- Preconnect to critical domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://enbhyeddogbocxgttkkd.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://connect.facebook.net" />
     
-    <!-- Non-blocking font loading -->
+    <!-- Non-blocking font loading (removed Playfair Display - unused) -->
     <link 
       rel="preload" 
       as="style" 
-      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap"
       onload="this.onload=null;this.rel='stylesheet'"
     />
     <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap" />
     </noscript>
 
     <meta property="og:type" content="website" />
@@ -47,17 +57,19 @@
     <meta property="og:description" content="Descubra seu perfil de sedução e transforme sua vida amorosa">
     <meta name="twitter:description" content="Descubra seu perfil de sedução e transforme sua vida amorosa">
 
-    <!-- Meta Pixel Code -->
+    <!-- Meta Pixel Code - Deferred for performance -->
     <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1585747689119987');
+    window.addEventListener('load', function() {
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '1585747689119987');
+    });
     </script>
     <!-- End Meta Pixel Code -->
   </head>
