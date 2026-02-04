@@ -1,5 +1,5 @@
 import { LazyMotion, domAnimation, m } from "framer-motion";
-import { Crown, Sparkles, Users } from "lucide-react";
+import { Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ParticleBackground } from "./ParticleBackground";
 
@@ -11,7 +11,7 @@ interface QuizLandingProps {
 export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
   return (
     <LazyMotion features={domAnimation} strict>
-      <div className="min-h-screen flex flex-col items-center justify-start md:justify-center px-4 py-6 md:px-4 md:py-8 relative">
+      <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8 md:px-4 md:py-8 relative">
         {/* Particle effects */}
         <ParticleBackground />
 
@@ -27,22 +27,12 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
           transition={{ duration: 0.6 }}
           className="relative z-10 max-w-2xl mx-auto text-center"
         >
-          {/* Icon */}
-          <m.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-            className="inline-flex items-center justify-center w-14 h-14 md:w-18 md:h-18 mb-4 md:mb-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30"
-          >
-            <Crown className="w-7 h-7 md:w-9 md:h-9 text-primary" />
-          </m.div>
-
           {/* Headline */}
           <m.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.5 }}
-            className="text-xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-5 leading-tight"
+            className="text-[22px] md:text-3xl lg:text-4xl font-bold mb-4 md:mb-5 leading-snug md:leading-tight px-2 md:px-0"
           >
             <span className="text-foreground">Por Que Mulheres Te Veem Apenas Como </span>
             <span className="text-gradient-gold">"Amigo"</span>
@@ -55,7 +45,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-sm md:text-base lg:text-lg text-muted-foreground mb-6 md:mb-10 max-w-xl mx-auto leading-relaxed"
+            className="text-[15px] md:text-base lg:text-lg text-muted-foreground mb-8 md:mb-10 max-w-xl mx-auto leading-relaxed px-1 md:px-0"
           >
             Descubra o <span className="text-primary font-semibold">ÚNICO erro</span> que está sabotando suas chances 
             com mulheres de qualidade e como se transformar no homem mais desejado do{" "}
@@ -71,7 +61,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             <Button
               onClick={onStart}
               size="lg"
-              className="bg-gradient-gold text-primary-foreground font-bold text-base md:text-lg px-6 md:px-10 py-5 md:py-6 rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-105"
+              className="bg-gradient-gold text-primary-foreground font-bold text-[15px] md:text-lg px-5 md:px-10 py-5 md:py-6 rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-105 w-full max-w-[320px] md:w-auto md:max-w-none"
             >
               <Sparkles className="w-5 h-5 md:w-5 md:h-5 mr-2" />
               DESCOBRIR MEU ERRO FATAL AGORA
@@ -83,7 +73,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.5 }}
-            className="text-xs md:text-sm text-muted-foreground mt-4 md:mt-5 italic"
+            className="text-[13px] md:text-sm text-muted-foreground mt-5 md:mt-5 italic px-4 md:px-0"
           >
             "Apenas 2 minutos podem mudar sua vida romântica para sempre"
           </m.p>
@@ -93,7 +83,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.5 }}
-            className="flex items-center justify-center gap-2 mt-4 md:mt-6 text-muted-foreground"
+            className="flex items-center justify-center gap-2 mt-5 md:mt-6 text-muted-foreground"
           >
             <Users className="w-4 h-4 md:w-4 md:h-4" />
             <span className="text-xs md:text-sm">
