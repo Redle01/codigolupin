@@ -168,6 +168,9 @@
 
   .animate-particle-float {
     animation: particle-float linear infinite;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+    transform: translateZ(0);
   }
 
   .bg-gold-particle {
@@ -176,5 +179,30 @@
 
   .bg-burgundy-particle {
     background-color: hsl(var(--burgundy));
+  }
+
+  /* Optimize button transitions */
+  button {
+    will-change: transform;
+  }
+
+  /* Smooth scrollbar for admin panels */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 3px;
   }
 }

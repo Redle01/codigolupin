@@ -28,11 +28,11 @@ export const QuizQuestion = memo(function QuizQuestion({
   const handleAnswer = (answerId: string) => {
     setJustSelected(answerId);
     
-    // Delay to show the feedback animation before advancing
+    // Reduced delay for snappier transitions while keeping visual feedback
     setTimeout(() => {
       onAnswer(answerId);
       setJustSelected(null);
-    }, 400);
+    }, 300);
   };
 
   return (
