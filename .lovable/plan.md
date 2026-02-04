@@ -1,296 +1,281 @@
 
-# Plano: Otimizacao de Performance do Funil
+# Plano: Auditoria e Correção do Sistema de Métricas
 
 ## Resumo Executivo
 
-Este plano otimiza a velocidade e performance do funil em todas as etapas, garantindo:
-- Primeira pagina (landing) abrindo em menos de 3 segundos em Wi-Fi/5G/4G
-- Transicoes fluidas e instantaneas entre todas as etapas
-- Zero compromisso com elementos visuais, animacoes ou rastreamento existentes
+A auditoria identificou **1 problema confirmado** (duplicação de leads) e **1 comportamento legítimo** (picos de visitantes). Este plano corrige a duplicação de leads sem alterar o funcionamento normal do funil.
 
 ---
 
-## Analise do Estado Atual
+## Problema 1: Duplicação de Leads - CONFIRMADO
 
-### O Que Ja Esta Bem Otimizado
+### Diagnóstico Técnico
 
-| Aspecto | Implementacao Atual |
-|---------|---------------------|
-| Lazy Loading | Componentes QuizQuestion, EmailCapture, QuizLoading, QuizResult carregados via lazy() |
-| Preload Inteligente | QuizQuestion pre-carregado durante idle time na landing |
-| Memoizacao | QuizLanding, QuizQuestion, EmailCapture, QuizResult sao memo() |
-| Tracking Assincrono | useFunnelMetrics usa requestIdleCallback para nao bloquear UI |
-| Particulas CSS | ParticleBackground usa CSS puro com will-change e GPU acceleration |
-| Framer Motion | Usa LazyMotion com domAnimation (bundle menor) |
+**Fluxo Atual (com bug):**
 
-### Oportunidades de Melhoria Identificadas
-
-| Problema | Impacto | Prioridade |
-|----------|---------|------------|
-| Fonts carregando de forma bloqueante | Delay no first paint | Alta |
-| Preload incompleto - apenas QuizQuestion | Demora nas transicoes posteriores | Media |
-| React.StrictMode pode causar double-render | Performance desnecessaria | Baixa |
-| Admin nao e lazy loaded | Bundle inicial maior | Media |
-| Toaster/Sonner carregados no bundle inicial | Peso extra na landing | Media |
-| CSS pode ter regras nao utilizadas | Tamanho do bundle | Baixa |
-
----
-
-## Fase 1: Otimizacao de Carregamento Inicial
-
-### 1.1 Melhoria no Carregamento de Fonts (index.html)
-
-Adicionar font-display: swap e otimizar preload:
-
-```html
-<!-- Antes -->
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" />
-
-<!-- Depois - Adicionar font-display e reduzir pesos nao usados -->
-<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link 
-  rel="preload" 
-  as="style" 
-  href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" 
-  onload="this.onload=null;this.rel='stylesheet'"
-/>
-<noscript>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" />
-</noscript>
+```text
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Usuário submete email                                                    │
+│     ↓                                                                    │
+│ submitEmail() → quiz-submit-email → INSERT lead (sem result_type)       │
+│     ↓                                                                    │
+│ Usuário responde Q7, Q8                                                  │
+│     ↓                                                                    │
+│ Quiz calcula resultado                                                   │
+│     ↓                                                                    │
+│ useEffect detecta state.result → updateResultType()                     │
+│     ↓                                                                    │
+│ updateResultType() → quiz-submit-email → INSERT lead (com result_type)  │
+│     ↓                                                                    │
+│ RESULTADO: 2 leads no banco para 1 usuário                              │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.2 Adicionar CSS Inline Critico (index.html)
+**Evidência no Banco de Dados:**
 
-Inserir estilos minimos para evitar flash branco:
+| ID | Email | Visitor ID | Result Type | Offer Flow | Created At |
+|----|-------|------------|-------------|------------|------------|
+| 54ea... | teste@gmail.com | v_1768509576309_6jgrijv | NULL | NULL | 01:48:04 |
+| 6ef4... | teste@gmail.com | v_1768509576309_6jgrijv | estrategista | 2 | 01:48:09 |
 
-```html
-<style>
-  /* Critical CSS - Prevent white flash */
-  body { 
-    background-color: hsl(0 0% 4%); 
-    color: hsl(45 29% 90%);
-    margin: 0;
+**Causa Raiz:**
+- O `updateResultType()` chama o mesmo endpoint `quiz-submit-email` que sempre faz INSERT
+- Deveria fazer UPDATE no lead existente, não INSERT de um novo
+
+### Solução
+
+Modificar o `quiz-submit-email` edge function para usar **UPSERT** baseado em `visitor_id`:
+
+```typescript
+// Antes (linha 105-116 de quiz-submit-email/index.ts)
+const { data, error } = await supabase
+  .from("quiz_leads")
+  .insert({
+    email,
+    visitor_id: visitor_id || null,
+    result_type: result_type || null,
+    answers: answers || null,
+    offer_flow: offer_flow || null,
+  })
+  .select()
+  .single();
+
+// Depois - UPSERT baseado em visitor_id
+// Se visitor_id existe, tenta encontrar lead existente primeiro
+if (visitor_id) {
+  const { data: existingLead } = await supabase
+    .from("quiz_leads")
+    .select("id")
+    .eq("visitor_id", visitor_id)
+    .maybeSingle();
+
+  if (existingLead) {
+    // UPDATE - lead já existe, apenas atualizar campos
+    const { data, error } = await supabase
+      .from("quiz_leads")
+      .update({
+        result_type: result_type || undefined,
+        offer_flow: offer_flow || undefined,
+        // Manter answers se já existir ou usar novo
+        answers: answers || undefined,
+      })
+      .eq("id", existingLead.id)
+      .select()
+      .single();
+    
+    // ... return response
   }
-  #root { 
-    min-height: 100vh; 
-    min-height: 100dvh;
-  }
-</style>
-```
-
----
-
-## Fase 2: Lazy Loading da Pagina Admin
-
-### 2.1 Tornar Admin Lazy (App.tsx)
-
-Evitar que Admin carregue no bundle inicial:
-
-```typescript
-// Antes
-import Admin from "./pages/Admin";
-
-// Depois
-const Admin = lazy(() => import("./pages/Admin"));
-
-// No Routes:
-<Route path="/admin" element={
-  <Suspense fallback={<div className="min-h-screen bg-background" />}>
-    <Admin />
-  </Suspense>
-} />
-```
-
----
-
-## Fase 3: Preload Inteligente de Proximas Etapas
-
-### 3.1 Expandir Preload Progressivo (Quiz.tsx)
-
-Pre-carregar componentes baseado na etapa atual:
-
-```typescript
-// Preload estrategico baseado na etapa atual
-useEffect(() => {
-  const preloadNext = () => {
-    if (state.currentStep === "landing") {
-      // Pre-carregar QuizQuestion durante idle na landing
-      import("./QuizQuestion");
-    } else if (state.currentStep === "questions" && state.currentQuestion >= 4) {
-      // Pre-carregar EmailCapture quando chegar na Q5
-      import("./EmailCapture");
-    } else if (state.currentStep === "email") {
-      // Pre-carregar QuizLoading e QuizResult durante captura de email
-      import("./QuizLoading");
-      import("./QuizResult");
-    }
-  };
-
-  if ("requestIdleCallback" in window) {
-    (window as Window).requestIdleCallback(preloadNext, { timeout: 2000 });
-  } else {
-    setTimeout(preloadNext, 500);
-  }
-}, [state.currentStep, state.currentQuestion]);
-```
-
----
-
-## Fase 4: Otimizacao de Re-renders
-
-### 4.1 Memoizar Handlers no Quiz.tsx
-
-Garantir que funcoes nao causem re-renders desnecessarios:
-
-```typescript
-// Memoizar handleEmailSubmit e handleCheckout (ja existem mas verificar)
-const handleEmailSubmit = useCallback(async () => {
-  return submitEmail();
-}, [submitEmail]);
-
-const handleCheckout = useCallback(() => {
-  redirectToCheckout();
-}, [redirectToCheckout]);
-```
-
-### 4.2 Otimizar Tracking no useFunnelMetrics.ts
-
-Adicionar debounce para evitar multiplos trackings:
-
-```typescript
-// Adicionar cache de ultima pagina rastreada
-const lastTrackedRef = useRef<string | null>(null);
-
-const trackPageView = useCallback((page: keyof FunnelMetrics["pageViews"]) => {
-  // Evitar tracking duplicado
-  if (lastTrackedRef.current === page) return;
-  lastTrackedRef.current = page;
-  
-  const visitorId = getOrCreateVisitorId();
-  scheduleIdleWork(() => {
-    sendTrackingEvent(visitorId, page);
-  });
-}, []);
-```
-
----
-
-## Fase 5: Otimizacao de Animacoes
-
-### 5.1 Reduzir Delays nas Animacoes (QuizLanding.tsx)
-
-Iniciar animacoes mais cedo para sensacao de velocidade:
-
-```typescript
-// Ajustar delays para serem mais rapidos mas ainda elegantes
-// Antes: delays de 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9, 1.0s
-// Depois: delays de 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.5, 0.6s
-
-// Exemplo no Icon:
-transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
-
-// Exemplo no Title:
-transition={{ delay: 0.15, duration: 0.5 }}
-```
-
-### 5.2 Otimizar Transicoes no QuizQuestion.tsx
-
-Reduzir duracao de transicoes para sensacao mais responsiva:
-
-```typescript
-// Ajustar feedback de selecao de resposta
-// Antes: setTimeout 400ms
-// Depois: setTimeout 300ms (mantem feedback visual mas mais rapido)
-
-const handleAnswer = (answerId: string) => {
-  setJustSelected(answerId);
-  setTimeout(() => {
-    onAnswer(answerId);
-    setJustSelected(null);
-  }, 300); // Reduzido de 400ms
-};
-```
-
----
-
-## Fase 6: Lazy Loading de Componentes UI Pesados
-
-### 6.1 Tornar Toaster/Sonner Lazy (App.tsx)
-
-Carregar notificacoes apenas quando necessario:
-
-```typescript
-// Antes
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-
-// Depois
-const Toaster = lazy(() => import("@/components/ui/toaster").then(m => ({ default: m.Toaster })));
-const Sonner = lazy(() => import("@/components/ui/sonner").then(m => ({ default: m.Toaster })));
-
-// No render:
-<Suspense fallback={null}>
-  <Toaster />
-  <Sonner />
-</Suspense>
-```
-
----
-
-## Fase 7: Otimizacao de CSS
-
-### 7.1 Adicionar will-change Estrategico (index.css)
-
-Preparar browser para animacoes:
-
-```css
-/* Adicionar na secao de animacoes */
-.animate-particle-float {
-  animation: particle-float linear infinite;
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-  transform: translateZ(0);
 }
 
-/* Otimizar transicoes de botoes */
-button {
-  will-change: transform;
-}
+// INSERT - novo lead
+const { data, error } = await supabase
+  .from("quiz_leads")
+  .insert({ ... })
 ```
 
----
+### Arquivos a Modificar
 
-## Resumo de Arquivos a Modificar
-
-| Arquivo | Mudanca |
+| Arquivo | Mudança |
 |---------|---------|
-| `index.html` | CSS inline critico, otimizacao de fonts |
-| `src/App.tsx` | Lazy load Admin, Toaster, Sonner |
-| `src/components/quiz/Quiz.tsx` | Preload progressivo expandido |
-| `src/components/quiz/QuizLanding.tsx` | Delays de animacao reduzidos |
-| `src/components/quiz/QuizQuestion.tsx` | Feedback de selecao mais rapido |
-| `src/hooks/useFunnelMetrics.ts` | Cache de tracking para evitar duplicatas |
-| `src/index.css` | will-change e otimizacoes GPU |
+| `supabase/functions/quiz-submit-email/index.ts` | Implementar lógica de UPSERT baseada em visitor_id |
 
 ---
 
-## Metricas Esperadas
+## Problema 2: Picos de Visitantes Únicos - NÃO CONFIRMADO
 
-| Metrica | Antes (Estimado) | Depois (Esperado) |
-|---------|------------------|-------------------|
-| First Contentful Paint | ~2.5s | ~1.5s |
-| Time to Interactive | ~3.5s | ~2.5s |
-| Transicao entre perguntas | ~450ms | ~350ms |
-| Bundle inicial (landing) | ~180KB | ~140KB |
+### Diagnóstico Técnico
+
+**Sistema Atual (correto):**
+
+O edge function `quiz-metrics` já possui deduplicação (linhas 100-121):
+
+```typescript
+// Verifica se visitante já visitou esta página
+const { data: existingEvent } = await supabaseAdmin
+  .from("quiz_funnel_events")
+  .select("id")
+  .eq("visitor_id", visitor_id)
+  .eq("page_key", page_key)
+  .maybeSingle();
+
+// Só insere se não existe
+if (!existingEvent) {
+  await supabaseAdmin
+    .from("quiz_funnel_events")
+    .insert({ visitor_id, page_key });
+}
+```
+
+**Evidência no Banco de Dados:**
+
+| Visitor ID | Eventos Únicos | Duplicatas |
+|------------|----------------|------------|
+| v_1768509576309_6jgrijv | 11 páginas | 0 |
+
+**Conclusão:**
+- O sistema de tracking de visitantes está funcionando corretamente
+- Não há duplicatas de eventos por visitante/página
+- Picos podem ser:
+  1. Tráfego real (vários usuários acessando simultaneamente)
+  2. Delay na atualização do painel (dados chegam em batch)
+  3. Atualização de cache do admin panel
+
+### Ação
+
+**Nenhuma alteração necessária** - o sistema está funcionando conforme esperado.
+
+---
+
+## Implementação Detalhada
+
+### Modificação: quiz-submit-email/index.ts
+
+```typescript
+// Após as validações e rate limiting (linha ~104)
+
+// Check for existing lead with same visitor_id
+let existingLeadId: string | null = null;
+if (visitor_id) {
+  const { data: existingLead } = await supabase
+    .from("quiz_leads")
+    .select("id")
+    .eq("visitor_id", visitor_id)
+    .maybeSingle();
+  
+  if (existingLead) {
+    existingLeadId = existingLead.id;
+  }
+}
+
+if (existingLeadId) {
+  // UPDATE existing lead - merge data
+  const updateData: Record<string, unknown> = {};
+  
+  // Only update fields that have values
+  if (result_type) updateData.result_type = result_type;
+  if (offer_flow) updateData.offer_flow = offer_flow;
+  if (answers && Object.keys(answers).length > 0) updateData.answers = answers;
+  
+  const { data, error } = await supabase
+    .from("quiz_leads")
+    .update(updateData)
+    .eq("id", existingLeadId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating lead:", error);
+    return new Response(
+      JSON.stringify({ error: "Failed to update lead" }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
+  console.log("Lead updated successfully:", data.id);
+  return new Response(
+    JSON.stringify({ success: true, id: data.id, updated: true }),
+    { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+  );
+}
+
+// INSERT new lead (código existente)
+const { data, error } = await supabase
+  .from("quiz_leads")
+  .insert({
+    email,
+    visitor_id: visitor_id || null,
+    result_type: result_type || null,
+    answers: answers || null,
+    offer_flow: offer_flow || null,
+  })
+  .select()
+  .single();
+
+// ... resto do código existente
+```
+
+---
+
+## Limpeza de Dados Duplicados (Opcional)
+
+Para corrigir os dados já duplicados, uma query SQL pode ser executada manualmente:
+
+```sql
+-- Identificar duplicatas
+SELECT visitor_id, email, COUNT(*) as count
+FROM quiz_leads 
+WHERE visitor_id IS NOT NULL
+GROUP BY visitor_id, email 
+HAVING COUNT(*) > 1;
+
+-- Manter apenas o registro mais completo (com result_type)
+-- e deletar os outros
+WITH duplicates AS (
+  SELECT id, visitor_id,
+    ROW_NUMBER() OVER (
+      PARTITION BY visitor_id 
+      ORDER BY 
+        CASE WHEN result_type IS NOT NULL THEN 0 ELSE 1 END,
+        created_at DESC
+    ) as rn
+  FROM quiz_leads
+  WHERE visitor_id IS NOT NULL
+)
+DELETE FROM quiz_leads 
+WHERE id IN (
+  SELECT id FROM duplicates WHERE rn > 1
+);
+```
+
+**Nota:** Esta query deve ser executada manualmente pelo administrador após verificação.
+
+---
+
+## Resumo de Mudanças
+
+| Item | Status | Ação |
+|------|--------|------|
+| Duplicação de Leads | CONFIRMADO | Implementar UPSERT no quiz-submit-email |
+| Picos de Visitantes | NÃO CONFIRMADO | Nenhuma alteração |
+| Tracking de Eventos | OK | Já possui deduplicação |
+| Rastreamento | PRESERVADO | Zero alterações |
 
 ---
 
 ## Garantias
 
-- Zero alteracao em elementos visuais
-- Zero alteracao em copy ou identidade visual
-- Zero alteracao em logica do funil
-- Zero alteracao em rastreamento/metricas
-- Todas as animacoes preservadas (apenas timing ajustado)
-- Performance otimizada "por baixo do capo"
+- Zero alteração no funcionamento do funil
+- Zero alteração no tracking e métricas existentes
+- Zero alteração na interface do usuário
+- Apenas correção da lógica de persistência no backend
+- Dados existentes podem ser limpos opcionalmente
+
+---
+
+## Resultado Esperado
+
+Após a implementação:
+- 1 usuário = 1 lead (mesmo completando todo o funil)
+- O lead é atualizado com result_type quando o quiz termina (não duplicado)
+- Métricas precisas e confiáveis
+- Rate limiting continua funcionando corretamente
