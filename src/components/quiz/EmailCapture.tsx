@@ -85,11 +85,18 @@ export const EmailCapture = memo(function EmailCapture({
               Para garantir que você receba:
             </p>
             <ul className="space-y-3 md:space-y-3">
-            {[
-                "Sua análise completa e personalizada",
-                "Plano específico de transformação para seu tipo",
-                "Bônus exclusivo: \"25 Frases de Impacto que Desarmam Qualquer Mulher\" (R$67)",
-                "Bônus exclusivo: \"Dominando o Carnaval 2026\" (R$97) — Liberado por tempo limitado",
+              {[
+                { text: "Sua análise completa e personalizada" },
+                { text: "Plano específico de transformação para seu tipo" },
+                { 
+                  text: "Bônus exclusivo: \"25 Frases de Impacto que Desarmam Qualquer Mulher\"",
+                  value: "R$67"
+                },
+                { 
+                  text: "Bônus exclusivo: \"Dominando o Carnaval 2026\"",
+                  value: "R$97",
+                  suffix: "— Liberado por tempo limitado"
+                },
               ].map((benefit, index) => (
                 <m.li
                   key={index}
@@ -99,7 +106,18 @@ export const EmailCapture = memo(function EmailCapture({
                   className="flex items-start gap-3 md:gap-3"
                 >
                   <span className="text-primary font-bold text-base md:text-base">✓</span>
-                  <span className="text-foreground text-sm md:text-sm leading-relaxed">{benefit}</span>
+                  <span className="text-foreground text-sm md:text-sm leading-relaxed">
+                    {benefit.text}
+                    {benefit.value && (
+                      <>
+                        {" "}
+                        <span className="line-through text-muted-foreground/70 decoration-primary/50 decoration-2">
+                          ({benefit.value})
+                        </span>
+                      </>
+                    )}
+                    {benefit.suffix && ` ${benefit.suffix}`}
+                  </span>
                 </m.li>
               ))}
             </ul>

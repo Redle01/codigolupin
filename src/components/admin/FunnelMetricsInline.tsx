@@ -97,8 +97,8 @@ function FunnelStepCard({
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.03 }}
         className={cn(
-          "relative flex flex-col rounded-xl border p-4 transition-all",
-          size === "large" ? "min-w-[160px]" : "min-w-[90px]",
+          "relative flex flex-col rounded-xl border p-3 lg:p-4 transition-all flex-shrink-0",
+          size === "large" ? "min-w-[120px] lg:min-w-[160px]" : "min-w-[70px] lg:min-w-[90px]",
           isBiggestDropoff && "ring-2 ring-destructive ring-offset-2 ring-offset-background",
           isHighlight && "border-primary bg-primary/10",
           isResult && "border-green-500/30 bg-green-500/10",
@@ -116,7 +116,7 @@ function FunnelStepCard({
         {/* Numero Principal */}
         <span className={cn(
           "font-bold tracking-tight",
-          size === "large" ? "text-3xl" : "text-xl",
+          size === "large" ? "text-2xl lg:text-3xl" : "text-lg lg:text-xl",
           isHighlight ? "text-primary" : isResult ? "text-green-500" : "text-foreground"
         )}>
           {views.toLocaleString("pt-BR")}
@@ -142,7 +142,7 @@ function FunnelStepCard({
       
       {/* Seta de Conexao */}
       {showArrow && (
-        <div className="flex flex-col items-center mx-1 min-w-[32px]">
+        <div className="flex flex-col items-center mx-0.5 lg:mx-1 min-w-[24px] lg:min-w-[32px]">
           <ChevronRight className={cn(
             "h-4 w-4",
             dropoffRate > 20 ? "text-destructive" : "text-muted-foreground/50"
@@ -193,7 +193,7 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
   return (
     <div className="space-y-6">
       {/* Quick Metrics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
         {/* Entrada no Funil */}
         <Card className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
@@ -261,7 +261,7 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
             <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">
               Jornada Pré-Email
             </h4>
-            <div className="flex items-stretch gap-1 overflow-x-auto pb-2">
+            <div className="flex items-stretch gap-0.5 lg:gap-1 overflow-x-auto pb-2 scroll-smooth">
               {preEmailSteps.map((step, i) => (
                 <FunnelStepCard 
                   key={step.key}
@@ -306,7 +306,7 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
             <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">
               Jornada Pós-Email
             </h4>
-            <div className="flex items-stretch gap-1 overflow-x-auto pb-2">
+            <div className="flex items-stretch gap-0.5 lg:gap-1 overflow-x-auto pb-2 scroll-smooth">
               {postEmailSteps.map((step, i) => (
                 <FunnelStepCard 
                   key={step.key}
@@ -364,8 +364,8 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-lg border overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="rounded-lg border overflow-x-auto">
+            <table className="w-full text-sm min-w-[500px]">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left p-3 font-medium">Etapa</th>
