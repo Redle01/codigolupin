@@ -28,10 +28,11 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
           className="relative z-10 max-w-2xl mx-auto text-center"
         >
           {/* Icon */}
+          {/* Icon */}
           <m.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
             className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 mb-5 md:mb-8 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30"
           >
             <Crown className="w-8 h-8 md:w-10 md:h-10 text-primary" />
@@ -41,7 +42,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
           <m.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
+            transition={{ delay: 0.15, duration: 0.5 }}
             className="font-serif-display text-2xl md:text-4xl lg:text-5xl font-bold mb-4 md:mb-6 leading-tight"
           >
             <span className="text-gradient-gold">Qual é Seu Tipo de</span>
@@ -53,7 +54,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
           <m.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
             className="text-base md:text-lg text-muted-foreground mb-3 md:mb-4 max-w-xl mx-auto leading-relaxed"
           >
             Descubra se você tem o perfil do{" "}
@@ -65,7 +66,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
           <m.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
+            transition={{ delay: 0.25, duration: 0.5 }}
             className="text-sm md:text-sm text-muted-foreground mb-5 md:mb-8"
           >
             E receba seu plano personalizado para dominar o Carnaval 2026
@@ -75,7 +76,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
           <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.6 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
             className="bg-card/50 backdrop-blur-sm border border-border rounded-xl md:rounded-2xl p-5 md:p-6 mb-5 md:mb-8"
           >
             <p className="text-foreground/90 italic text-sm md:text-base leading-relaxed">
@@ -89,7 +90,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
           <m.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.7, duration: 0.4 }}
+            transition={{ delay: 0.35, duration: 0.35 }}
           >
             <Button
               onClick={onStart}
@@ -105,7 +106,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
           <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.9, duration: 0.6 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
             className="flex items-center justify-center gap-2 mt-5 md:mt-8 text-muted-foreground"
           >
             <Users className="w-4 h-4 md:w-4 md:h-4" />
@@ -121,7 +122,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
           <m.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1, duration: 0.6 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
             className="text-xs md:text-xs text-muted-foreground mt-4 md:mt-4"
           >
             ⏱️ Tempo estimado: 2 minutos

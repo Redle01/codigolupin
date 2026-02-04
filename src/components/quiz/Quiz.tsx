@@ -1,4 +1,4 @@
-import { useEffect, useRef, lazy, Suspense, memo } from "react";
+import { useEffect, useRef, lazy, Suspense, memo, useCallback } from "react";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useFunnelMetrics, getOrCreateVisitorId } from "@/hooks/useFunnelMetrics";
 import { useMetaPixel } from "@/hooks/useMetaPixel";
@@ -48,7 +48,6 @@ export function Quiz() {
   const { metrics, trackPageView } = useFunnelMetrics();
   const { trackPageView: trackMetaPageView, setExternalId, initWithUser } = useMetaPixel();
   const lastTrackedPage = useRef<string | null>(null);
-  const preloadedRef = useRef(false);
   const pixelInitializedRef = useRef(false);
 
   // Initialize Meta Pixel with visitor_id
@@ -68,21 +67,30 @@ export function Quiz() {
     }
   }, []);
 
-  // Preload next component during idle time
+  // Progressive preload based on current step
   useEffect(() => {
-    if (state.currentStep === "landing" && !preloadedRef.current) {
-      const preload = () => {
+    const preloadNext = () => {
+      if (state.currentStep === "landing") {
+        // Preload QuizQuestion during idle on landing
         import("./QuizQuestion");
-        preloadedRef.current = true;
-      };
-      
-      if ("requestIdleCallback" in window) {
-        (window as Window).requestIdleCallback(preload, { timeout: 3000 });
-      } else {
-        setTimeout(preload, 1000);
+      } else if (state.currentStep === "questions") {
+        // Preload EmailCapture when reaching Q5
+        if (state.currentQuestion >= 4) {
+          import("./EmailCapture");
+        }
+      } else if (state.currentStep === "email") {
+        // Preload QuizLoading and QuizResult during email capture
+        import("./QuizLoading");
+        import("./QuizResult");
       }
+    };
+
+    if ("requestIdleCallback" in window) {
+      (window as Window).requestIdleCallback(preloadNext, { timeout: 2000 });
+    } else {
+      setTimeout(preloadNext, 500);
     }
-  }, [state.currentStep]);
+  }, [state.currentStep, state.currentQuestion]);
 
   // Track page views - send to server on every step change
   useEffect(() => {
@@ -105,7 +113,7 @@ export function Quiz() {
     // Only track if page changed
     if (currentPage !== lastTrackedPage.current) {
       trackPageView(currentPage as keyof typeof metrics.pageViews);
-      // Disparar Meta Pixel PageView de forma assíncrona (não bloqueia)
+      // Fire Meta Pixel PageView asynchronously (non-blocking)
       trackMetaPageView();
       lastTrackedPage.current = currentPage;
     }
@@ -119,13 +127,14 @@ export function Quiz() {
     }
   }, [state.email, initWithUser]);
 
-  const handleEmailSubmit = async () => {
+  // Memoized handlers to prevent unnecessary re-renders
+  const handleEmailSubmit = useCallback(async () => {
     return submitEmail();
-  };
+  }, [submitEmail]);
 
-  const handleCheckout = () => {
+  const handleCheckout = useCallback(() => {
     redirectToCheckout();
-  };
+  }, [redirectToCheckout]);
 
   return (
     <div className="min-h-screen bg-background">
