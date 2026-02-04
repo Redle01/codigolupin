@@ -1,8 +1,13 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { quizQuestions, quizResults, ResultType, quizConfig } from "@/lib/quizConfig";
-import { supabase } from "@/integrations/supabase/client";
 import { getOrCreateVisitorId } from "./useFunnelMetrics";
 import { useMetaPixel } from "./useMetaPixel";
+
+// Lazy load Supabase only when needed (saves ~30KB from initial bundle)
+const getSupabase = async () => {
+  const { supabase } = await import("@/integrations/supabase/client");
+  return supabase;
+};
 
 export interface QuizState {
   currentStep: "landing" | "questions" | "email" | "loading" | "result";
@@ -143,6 +148,7 @@ export function useQuiz() {
     
     try {
       const visitorId = getOrCreateVisitorId();
+      const supabase = await getSupabase();
       
       const { error } = await supabase.functions.invoke("quiz-submit-email", {
         body: {
@@ -174,6 +180,7 @@ export function useQuiz() {
     
     try {
       const visitorId = getOrCreateVisitorId();
+      const supabase = await getSupabase();
       
       // Update the lead with result type and offer flow
       await supabase.functions.invoke("quiz-submit-email", {

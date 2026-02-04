@@ -12,7 +12,8 @@ interface Particle {
 
 export function ParticleBackground() {
   const particles = useMemo<Particle[]>(() => {
-    return Array.from({ length: 8 }, (_, i) => ({
+    // Reduced from 8 to 5 particles for better mobile performance
+    return Array.from({ length: 5 }, (_, i) => ({
       id: i,
       x: Math.random() * 100,
       y: Math.random() * 100,

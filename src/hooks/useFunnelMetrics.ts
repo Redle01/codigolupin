@@ -1,5 +1,10 @@
 import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+
+// Lazy load Supabase only when needed (saves ~30KB from initial bundle)
+const getSupabase = async () => {
+  const { supabase } = await import("@/integrations/supabase/client");
+  return supabase;
+};
 
 const VISITOR_ID_KEY = "quiz_visitor_id";
 
@@ -67,9 +72,10 @@ function scheduleIdleWork(callback: () => void, timeout = 2000) {
   }
 }
 
-// Async tracking function - fire and forget
+// Async tracking function - fire and forget with lazy Supabase
 async function sendTrackingEvent(visitorId: string, page: string) {
   try {
+    const supabase = await getSupabase();
     await supabase.functions.invoke("quiz-metrics", {
       body: {
         action: "track",
@@ -102,6 +108,7 @@ export function useFunnelMetrics() {
     setIsLoading(true);
     
     try {
+      const supabase = await getSupabase();
       // Get current session for auth header
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -137,6 +144,7 @@ export function useFunnelMetrics() {
     setIsLoading(true);
     
     try {
+      const supabase = await getSupabase();
       // Get current session for auth header
       const { data: { session } } = await supabase.auth.getSession();
       

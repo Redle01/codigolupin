@@ -109,9 +109,6 @@
 }
 
 @layer utilities {
-  .font-serif-display {
-    font-family: 'Playfair Display', Georgia, serif;
-  }
 
   .text-gradient-gold {
     @apply bg-gradient-to-r from-[hsl(var(--gold-light))] via-[hsl(var(--gold))] to-[hsl(var(--gold-dark))] bg-clip-text text-transparent;
