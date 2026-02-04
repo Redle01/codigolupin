@@ -29,12 +29,12 @@ export const quizConfig = {
 export const quizQuestions = [
   {
     id: 1,
-    question: "Quando você entra numa festa ou evento social, qual situação descreve melhor o que acontece?",
+    question: "Qual dessas situações MAIS te machuca quando acontece?",
     options: [
-      { id: "a", text: "As pessoas me cumprimentam educadamente, mas eu fico mais observando", points: { gentleman: 3, estrategista: 1, diamante: 0, guerreiro: 1 } },
-      { id: "b", text: "Converso naturalmente, mas raramente sou o centro das atenções", points: { gentleman: 2, estrategista: 2, diamante: 1, guerreiro: 0 } },
-      { id: "c", text: "Algumas mulheres demonstram interesse, mas eu nunca sei como interpretar", points: { gentleman: 1, estrategista: 3, diamante: 2, guerreiro: 0 } },
-      { id: "d", text: "Eu me sinto confiante, mas algo sempre \"trava\" na hora H", points: { gentleman: 0, estrategista: 2, diamante: 3, guerreiro: 1 } },
+      { id: "a", text: "Ver um cara \"inferior\" a você saindo com a mulher que você queria", points: { gentleman: 3, estrategista: 2, diamante: 0, guerreiro: 1 } },
+      { id: "b", text: "Ser chamado de \"querido\" por uma mulher que você deseja romanticamente", points: { gentleman: 3, estrategista: 1, diamante: 0, guerreiro: 1 } },
+      { id: "c", text: "Conseguir o número, conversar bem, mas ela \"esfriar\" do nada", points: { gentleman: 1, estrategista: 3, diamante: 2, guerreiro: 0 } },
+      { id: "d", text: "Mulheres te elogiarem como \"homem ideal\", mas nunca se interessarem sexualmente", points: { gentleman: 2, estrategista: 1, diamante: 2, guerreiro: 2 } },
     ],
   },
   {
