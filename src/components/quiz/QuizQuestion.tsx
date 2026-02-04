@@ -82,7 +82,7 @@ export const QuizQuestion = memo(function QuizQuestion({
               transition={{ duration: 0.3 }}
               className="w-full"
             >
-              <h2 className="font-serif-display text-xl md:text-3xl font-bold text-center mb-6 md:mb-10 text-foreground leading-relaxed">
+              <h2 className="text-xl md:text-3xl font-bold text-center mb-6 md:mb-10 text-foreground leading-relaxed">
                 {question}
               </h2>
 
