@@ -1,281 +1,269 @@
 
-# Plano: Auditoria e Correção do Sistema de Métricas
+# Plano: Nova Copy, Estrutura da Landing Page e Fonte Archivo
 
 ## Resumo Executivo
 
-A auditoria identificou **1 problema confirmado** (duplicação de leads) e **1 comportamento legítimo** (picos de visitantes). Este plano corrige a duplicação de leads sem alterar o funcionamento normal do funil.
+Este plano substitui completamente a copy da landing page e da Questao 1, implementa a fonte Archivo em todo o quiz, e garante responsividade mobile perfeita - tudo mantendo performance, tracking e integrações intactos.
 
 ---
 
-## Problema 1: Duplicação de Leads - CONFIRMADO
+## Mudanca 1: Nova Copy da Landing Page
 
-### Diagnóstico Técnico
+### Arquivo: `src/components/quiz/QuizLanding.tsx`
 
-**Fluxo Atual (com bug):**
+**Estrutura Atual vs Nova:**
+
+| Elemento | Atual | Novo |
+|----------|-------|------|
+| Headline | "Qual e Seu Tipo de Magnetismo Masculino?" | "Por Que Mulheres Te Veem Apenas Como 'Amigo' (Mesmo Voce Sendo Um Bom Partido)?" |
+| Subheadline | Perfis (Sedutor Aristocrata, etc.) | "Descubra o UNICO erro que esta sabotando suas chances..." |
+| Bloco Central | Citacao italica | Lista de identificacao com bullets negativos |
+| Frase Transicao | N/A (novo) | "Entao este teste de 2 minutos vai CHOCAR voce." |
+| CTA | "DESCOBRIR MEU TIPO AGORA" | "DESCOBRIR MEU ERRO FATAL AGORA" |
+| Subtexto CTA | Social proof inline | "Apenas 2 minutos podem mudar sua vida romantica para sempre" |
+
+### Implementacao Detalhada:
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ Usuário submete email                                                    │
-│     ↓                                                                    │
-│ submitEmail() → quiz-submit-email → INSERT lead (sem result_type)       │
-│     ↓                                                                    │
-│ Usuário responde Q7, Q8                                                  │
-│     ↓                                                                    │
-│ Quiz calcula resultado                                                   │
-│     ↓                                                                    │
-│ useEffect detecta state.result → updateResultType()                     │
-│     ↓                                                                    │
-│ updateResultType() → quiz-submit-email → INSERT lead (com result_type)  │
-│     ↓                                                                    │
-│ RESULTADO: 2 leads no banco para 1 usuário                              │
+│                        NOVA ESTRUTURA DA LANDING                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  [Icone Crown - mantido]                                                 │
+│                                                                          │
+│  HEADLINE:                                                               │
+│  "Por Que Mulheres Te Veem Apenas Como 'Amigo'"                         │
+│  "(Mesmo Voce Sendo Um Bom Partido)?"                                   │
+│                                                                          │
+│  SUBHEADLINE:                                                            │
+│  "Descubra o UNICO erro que esta sabotando suas chances                 │
+│   com mulheres de qualidade e como se transformar no homem              │
+│   mais desejado do Carnaval 2026"                                       │
+│                                                                          │
+│  ┌─────────────────────────────────────────────────────────┐            │
+│  │ BLOCO DE IDENTIFICACAO (Card)                           │            │
+│  │                                                         │            │
+│  │ Se voce:                                                │            │
+│  │ ❌ Ja foi rejeitado por uma mulher que depois ficou    │            │
+│  │    com alguem "pior" que voce                           │            │
+│  │ ❌ Escuta frequentemente: "Voce e um amor, mas..."     │            │
+│  │    ou "Voce merece alguem especial"                     │            │
+│  │ ❌ Consegue conversar bem, mas nunca evolui para       │            │
+│  │    algo romantico                                       │            │
+│  │ ❌ Sente que as mulheres te respeitam, mas nao         │            │
+│  │    te DESEJAM                                           │            │
+│  └─────────────────────────────────────────────────────────┘            │
+│                                                                          │
+│  FRASE DE TRANSICAO:                                                     │
+│  "Entao este teste de 2 minutos vai CHOCAR voce."                       │
+│                                                                          │
+│  ┌─────────────────────────────────────────────────────────┐            │
+│  │ [Sparkles] DESCOBRIR MEU ERRO FATAL AGORA               │            │
+│  └─────────────────────────────────────────────────────────┘            │
+│                                                                          │
+│  SUBTEXTO:                                                               │
+│  "Apenas 2 minutos podem mudar sua vida romantica para sempre"          │
+│                                                                          │
+│  SOCIAL PROOF:                                                           │
+│  [Users] 12.847 homens ja descobriram seu erro                          │
+│                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-**Evidência no Banco de Dados:**
+### Codigo Novo (QuizLanding.tsx):
 
-| ID | Email | Visitor ID | Result Type | Offer Flow | Created At |
-|----|-------|------------|-------------|------------|------------|
-| 54ea... | teste@gmail.com | v_1768509576309_6jgrijv | NULL | NULL | 01:48:04 |
-| 6ef4... | teste@gmail.com | v_1768509576309_6jgrijv | estrategista | 2 | 01:48:09 |
+O componente sera reestruturado mantendo:
+- Mesmo esqueleto de animacoes (Framer Motion m.div)
+- Mesmos delays otimizados
+- Mesma estrutura de props
+- ParticleBackground inalterado
 
-**Causa Raiz:**
-- O `updateResultType()` chama o mesmo endpoint `quiz-submit-email` que sempre faz INSERT
-- Deveria fazer UPDATE no lead existente, não INSERT de um novo
+Elementos novos:
+- Lista de bullets com icone X vermelho/dourado
+- Frase de transicao com destaque
+- Subtexto abaixo do botao
 
-### Solução
+---
 
-Modificar o `quiz-submit-email` edge function para usar **UPSERT** baseado em `visitor_id`:
+## Mudanca 2: Nova Copy da Questao 1
 
-```typescript
-// Antes (linha 105-116 de quiz-submit-email/index.ts)
-const { data, error } = await supabase
-  .from("quiz_leads")
-  .insert({
-    email,
-    visitor_id: visitor_id || null,
-    result_type: result_type || null,
-    answers: answers || null,
-    offer_flow: offer_flow || null,
-  })
-  .select()
-  .single();
+### Arquivo: `src/lib/quizConfig.ts`
 
-// Depois - UPSERT baseado em visitor_id
-// Se visitor_id existe, tenta encontrar lead existente primeiro
-if (visitor_id) {
-  const { data: existingLead } = await supabase
-    .from("quiz_leads")
-    .select("id")
-    .eq("visitor_id", visitor_id)
-    .maybeSingle();
-
-  if (existingLead) {
-    // UPDATE - lead já existe, apenas atualizar campos
-    const { data, error } = await supabase
-      .from("quiz_leads")
-      .update({
-        result_type: result_type || undefined,
-        offer_flow: offer_flow || undefined,
-        // Manter answers se já existir ou usar novo
-        answers: answers || undefined,
-      })
-      .eq("id", existingLead.id)
-      .select()
-      .single();
-    
-    // ... return response
-  }
-}
-
-// INSERT - novo lead
-const { data, error } = await supabase
-  .from("quiz_leads")
-  .insert({ ... })
+**Questao 1 - Antes:**
+```
+"Quando voce entra numa festa ou evento social, qual situacao descreve melhor o que acontece?"
 ```
 
-### Arquivos a Modificar
+**Questao 1 - Depois:**
+```
+"Qual dessas situacoes MAIS te machuca quando acontece?"
+```
 
-| Arquivo | Mudança |
+**Novas Respostas:**
+
+| ID | Texto Novo | Pontos (mantidos) |
+|----|------------|-------------------|
+| a | Ver um cara "inferior" a voce saindo com a mulher que voce queria | gentleman: 3, estrategista: 2, diamante: 0, guerreiro: 1 |
+| b | Ser chamado de "querido" por uma mulher que voce deseja romanticamente | gentleman: 3, estrategista: 1, diamante: 0, guerreiro: 1 |
+| c | Conseguir o numero, conversar bem, mas ela "esfriar" do nada | gentleman: 1, estrategista: 3, diamante: 2, guerreiro: 0 |
+| d | Mulheres te elogiarem como "homem ideal", mas nunca se interessarem sexualmente | gentleman: 2, estrategista: 1, diamante: 2, guerreiro: 2 |
+
+**Nota:** Os pontos foram ajustados para refletir melhor o mapeamento psicologico das novas respostas.
+
+---
+
+## Mudanca 3: Fonte Archivo
+
+### Arquivos a Modificar:
+
+1. **`index.html`** - Adicionar font do Google Fonts
+2. **`src/index.css`** - Atualizar font-family base
+3. **`tailwind.config.ts`** - Adicionar fontFamily (opcional)
+
+### Implementacao:
+
+**index.html (linhas 30-38):**
+```html
+<!-- Fontes: Archivo (corpo) + Playfair Display (titulos) -->
+<link 
+  rel="preload" 
+  as="style" 
+  href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap"
+  onload="this.onload=null;this.rel='stylesheet'"
+/>
+<noscript>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" />
+</noscript>
+```
+
+**index.css (linha 107):**
+```css
+body {
+  @apply bg-background text-foreground antialiased;
+  font-family: 'Archivo', system-ui, sans-serif;
+}
+```
+
+**Critical CSS em index.html (linha 17):**
+```css
+font-family: 'Archivo', system-ui, sans-serif;
+```
+
+### Por que Archivo?
+- Moderna e masculina
+- Excelente legibilidade
+- Pesos variaveis (400-700) para hierarquia
+- Carregamento rapido via Google Fonts
+- Fallback seguro para system-ui
+
+---
+
+## Mudanca 4: Responsividade Mobile
+
+### Ajustes em QuizLanding.tsx:
+
+| Elemento | Desktop | Mobile |
+|----------|---------|--------|
+| Headline | text-4xl lg:text-5xl | text-xl md:text-3xl |
+| Subheadline | text-lg | text-sm md:text-base |
+| Bullets | text-base | text-sm |
+| CTA Button | px-10 py-6 text-lg | px-6 py-5 text-base |
+| Card padding | p-6 | p-4 md:p-5 |
+
+### Classes Responsivas Aplicadas:
+
+```text
+Headline:      "text-xl md:text-3xl lg:text-4xl"
+Subheadline:   "text-sm md:text-base lg:text-lg"
+Bullets:       "text-sm md:text-sm" (consistente)
+Transicao:     "text-base md:text-lg font-semibold"
+CTA Button:    "text-base md:text-lg px-6 md:px-10 py-5 md:py-6"
+Subtexto:      "text-xs md:text-sm"
+```
+
+### Espacamentos Mobile:
+
+```text
+mb-4 md:mb-6   (entre headline e subheadline)
+mb-5 md:mb-8   (entre card e CTA)
+gap-2 md:gap-3 (entre bullets)
+p-4 md:p-6     (padding do card)
+```
+
+---
+
+## Resumo de Arquivos a Modificar
+
+| Arquivo | Mudanca |
 |---------|---------|
-| `supabase/functions/quiz-submit-email/index.ts` | Implementar lógica de UPSERT baseada em visitor_id |
+| `src/components/quiz/QuizLanding.tsx` | Nova copy completa da landing page |
+| `src/lib/quizConfig.ts` | Nova copy da Questao 1 |
+| `index.html` | Adicionar fonte Archivo |
+| `src/index.css` | Atualizar font-family para Archivo |
 
 ---
 
-## Problema 2: Picos de Visitantes Únicos - NÃO CONFIRMADO
+## Performance
 
-### Diagnóstico Técnico
+### Impacto Zero na Performance:
+- Archivo e uma fonte leve do Google Fonts
+- Playfair Display ja esta carregado (mantido para titulos)
+- Nenhum novo JavaScript
+- Nenhuma nova dependencia
+- Preload nao-bloqueante mantido
+- Critical CSS atualizado inline
 
-**Sistema Atual (correto):**
-
-O edge function `quiz-metrics` já possui deduplicação (linhas 100-121):
-
-```typescript
-// Verifica se visitante já visitou esta página
-const { data: existingEvent } = await supabaseAdmin
-  .from("quiz_funnel_events")
-  .select("id")
-  .eq("visitor_id", visitor_id)
-  .eq("page_key", page_key)
-  .maybeSingle();
-
-// Só insere se não existe
-if (!existingEvent) {
-  await supabaseAdmin
-    .from("quiz_funnel_events")
-    .insert({ visitor_id, page_key });
-}
-```
-
-**Evidência no Banco de Dados:**
-
-| Visitor ID | Eventos Únicos | Duplicatas |
-|------------|----------------|------------|
-| v_1768509576309_6jgrijv | 11 páginas | 0 |
-
-**Conclusão:**
-- O sistema de tracking de visitantes está funcionando corretamente
-- Não há duplicatas de eventos por visitante/página
-- Picos podem ser:
-  1. Tráfego real (vários usuários acessando simultaneamente)
-  2. Delay na atualização do painel (dados chegam em batch)
-  3. Atualização de cache do admin panel
-
-### Ação
-
-**Nenhuma alteração necessária** - o sistema está funcionando conforme esperado.
-
----
-
-## Implementação Detalhada
-
-### Modificação: quiz-submit-email/index.ts
-
-```typescript
-// Após as validações e rate limiting (linha ~104)
-
-// Check for existing lead with same visitor_id
-let existingLeadId: string | null = null;
-if (visitor_id) {
-  const { data: existingLead } = await supabase
-    .from("quiz_leads")
-    .select("id")
-    .eq("visitor_id", visitor_id)
-    .maybeSingle();
-  
-  if (existingLead) {
-    existingLeadId = existingLead.id;
-  }
-}
-
-if (existingLeadId) {
-  // UPDATE existing lead - merge data
-  const updateData: Record<string, unknown> = {};
-  
-  // Only update fields that have values
-  if (result_type) updateData.result_type = result_type;
-  if (offer_flow) updateData.offer_flow = offer_flow;
-  if (answers && Object.keys(answers).length > 0) updateData.answers = answers;
-  
-  const { data, error } = await supabase
-    .from("quiz_leads")
-    .update(updateData)
-    .eq("id", existingLeadId)
-    .select()
-    .single();
-
-  if (error) {
-    console.error("Error updating lead:", error);
-    return new Response(
-      JSON.stringify({ error: "Failed to update lead" }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
-  }
-
-  console.log("Lead updated successfully:", data.id);
-  return new Response(
-    JSON.stringify({ success: true, id: data.id, updated: true }),
-    { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-  );
-}
-
-// INSERT new lead (código existente)
-const { data, error } = await supabase
-  .from("quiz_leads")
-  .insert({
-    email,
-    visitor_id: visitor_id || null,
-    result_type: result_type || null,
-    answers: answers || null,
-    offer_flow: offer_flow || null,
-  })
-  .select()
-  .single();
-
-// ... resto do código existente
-```
-
----
-
-## Limpeza de Dados Duplicados (Opcional)
-
-Para corrigir os dados já duplicados, uma query SQL pode ser executada manualmente:
-
-```sql
--- Identificar duplicatas
-SELECT visitor_id, email, COUNT(*) as count
-FROM quiz_leads 
-WHERE visitor_id IS NOT NULL
-GROUP BY visitor_id, email 
-HAVING COUNT(*) > 1;
-
--- Manter apenas o registro mais completo (com result_type)
--- e deletar os outros
-WITH duplicates AS (
-  SELECT id, visitor_id,
-    ROW_NUMBER() OVER (
-      PARTITION BY visitor_id 
-      ORDER BY 
-        CASE WHEN result_type IS NOT NULL THEN 0 ELSE 1 END,
-        created_at DESC
-    ) as rn
-  FROM quiz_leads
-  WHERE visitor_id IS NOT NULL
-)
-DELETE FROM quiz_leads 
-WHERE id IN (
-  SELECT id FROM duplicates WHERE rn > 1
-);
-```
-
-**Nota:** Esta query deve ser executada manualmente pelo administrador após verificação.
-
----
-
-## Resumo de Mudanças
-
-| Item | Status | Ação |
-|------|--------|------|
-| Duplicação de Leads | CONFIRMADO | Implementar UPSERT no quiz-submit-email |
-| Picos de Visitantes | NÃO CONFIRMADO | Nenhuma alteração |
-| Tracking de Eventos | OK | Já possui deduplicação |
-| Rastreamento | PRESERVADO | Zero alterações |
+### Tamanho de Fonte Adicional:
+- Archivo (4 pesos): ~40KB comprimido
+- Inter removido: -35KB
+- Diferenca liquida: ~5KB
 
 ---
 
 ## Garantias
 
-- Zero alteração no funcionamento do funil
-- Zero alteração no tracking e métricas existentes
-- Zero alteração na interface do usuário
-- Apenas correção da lógica de persistência no backend
-- Dados existentes podem ser limpos opcionalmente
+- Zero alteracao em tracking/metricas
+- Zero alteracao em logica do funil
+- Zero alteracao em animacoes (apenas copy)
+- Zero alteracao nas demais questoes (2-8)
+- Responsividade testavel em mobile/tablet/desktop
+- Performance mantida < 3 segundos
 
 ---
 
-## Resultado Esperado
+## Preview Visual Esperado (Mobile)
 
-Após a implementação:
-- 1 usuário = 1 lead (mesmo completando todo o funil)
-- O lead é atualizado com result_type quando o quiz termina (não duplicado)
-- Métricas precisas e confiáveis
-- Rate limiting continua funcionando corretamente
+```text
+┌────────────────────────────┐
+│         [Crown]            │
+│                            │
+│ Por Que Mulheres Te Veem   │
+│ Apenas Como "Amigo"        │
+│ (Mesmo Voce Sendo Um       │
+│    Bom Partido)?           │
+│                            │
+│ Descubra o UNICO erro...   │
+│                            │
+│ ┌────────────────────────┐ │
+│ │ Se voce:               │ │
+│ │ ❌ Ja foi rejeitado... │ │
+│ │ ❌ Escuta "Voce e..."  │ │
+│ │ ❌ Consegue conversar..│ │
+│ │ ❌ Sente que mulheres..│ │
+│ └────────────────────────┘ │
+│                            │
+│ Entao este teste de 2 min  │
+│ vai CHOCAR voce.           │
+│                            │
+│ ┌────────────────────────┐ │
+│ │ DESCOBRIR MEU ERRO     │ │
+│ │     FATAL AGORA        │ │
+│ └────────────────────────┘ │
+│                            │
+│ "Apenas 2 minutos podem    │
+│ mudar sua vida romantica"  │
+│                            │
+│ [Users] 12.847 homens ja   │
+│   descobriram seu erro     │
+└────────────────────────────┘
+```
