@@ -3,6 +3,7 @@ import { useQuiz } from "@/hooks/useQuiz";
 import { useFunnelMetrics, getOrCreateVisitorId } from "@/hooks/useFunnelMetrics";
 import { useMetaPixel } from "@/hooks/useMetaPixel";
 import { quizConfig } from "@/lib/quizConfig";
+import { isInternalAccess } from "@/lib/environment";
 import { QuizLanding } from "./QuizLanding";
 
 // Lazy load non-critical components
@@ -50,8 +51,11 @@ export function Quiz() {
   const lastTrackedPage = useRef<string | null>(null);
   const pixelInitializedRef = useRef(false);
 
-  // Initialize Meta Pixel with visitor_id
+  // Initialize Meta Pixel with visitor_id (skip in internal environments)
   useEffect(() => {
+    // Não inicializar Meta Pixel em ambiente interno
+    if (isInternalAccess()) return;
+    
     if (!pixelInitializedRef.current) {
       const visitorId = getOrCreateVisitorId();
       setExternalId(visitorId);
@@ -92,8 +96,14 @@ export function Quiz() {
     }
   }, [state.currentStep, state.currentQuestion]);
 
-  // Track page views - send to server on every step change
+  // Track page views - send to server on every step change (skip in internal environments)
   useEffect(() => {
+    // Não rastrear em ambiente interno
+    if (isInternalAccess()) {
+      console.debug("[Quiz] Skipping tracking in internal environment");
+      return;
+    }
+
     let currentPage: string;
     
     if (state.currentStep === "landing") {

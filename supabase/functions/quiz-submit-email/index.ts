@@ -38,6 +38,29 @@ serve(async (req: Request): Promise<Response> => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
+    // Verificar se é acesso interno (ambiente Lovable preview/dev)
+    const origin = req.headers.get("origin") || "";
+    const referer = req.headers.get("referer") || "";
+    
+    const BLOCKED_PATTERNS = [
+      /id-preview--.*\.lovable\.app/i,
+      /localhost/i,
+      /127\.0\.0\.1/i,
+      /\.lovable\.dev/i,
+    ];
+    
+    const isInternalRequest = BLOCKED_PATTERNS.some(pattern => 
+      pattern.test(origin) || pattern.test(referer)
+    );
+    
+    if (isInternalRequest) {
+      console.log("Blocked internal lead submission from:", origin || referer);
+      return new Response(
+        JSON.stringify({ success: true, blocked: true, reason: "internal_access" }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     const { email, visitor_id, result_type, answers, offer_flow }: SubmitEmailRequest = await req.json();
 
     if (!email) {

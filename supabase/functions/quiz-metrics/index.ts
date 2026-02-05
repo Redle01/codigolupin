@@ -90,6 +90,30 @@ serve(async (req: Request): Promise<Response> => {
 
     // POST action: track - Register page view event (public - no auth required)
     if (action === "track") {
+      const origin = req.headers.get("origin") || "";
+      const referer = req.headers.get("referer") || "";
+      
+      // Lista de padrões de origens bloqueadas (ambiente interno)
+      const BLOCKED_PATTERNS = [
+        /id-preview--.*\.lovable\.app/i,
+        /localhost/i,
+        /127\.0\.0\.1/i,
+        /\.lovable\.dev/i,
+      ];
+      
+      // Verificar se origem é bloqueada (acesso interno)
+      const isBlocked = BLOCKED_PATTERNS.some(pattern => 
+        pattern.test(origin) || pattern.test(referer)
+      );
+      
+      if (isBlocked) {
+        console.log("Blocked internal tracking request from:", origin || referer);
+        return new Response(
+          JSON.stringify({ success: true, blocked: true, reason: "internal_access" }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+
       const { visitor_id, page_key } = body as TrackEventRequest;
 
       if (!visitor_id || !page_key) {
