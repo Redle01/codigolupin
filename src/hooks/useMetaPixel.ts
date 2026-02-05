@@ -26,21 +26,6 @@ export function useMetaPixel() {
     }
   }, []);
 
-  // InitiateCheckout - disparar no clique do CTA que leva ao checkout
-  const trackInitiateCheckout = useCallback((data?: {
-    content_name?: string;
-    value?: number;
-    currency?: string;
-  }) => {
-    if (typeof window !== "undefined" && window.fbq) {
-      window.fbq("track", "InitiateCheckout", {
-        content_name: data?.content_name || "Quiz Result",
-        value: data?.value || 0,
-        currency: data?.currency || "BRL",
-      });
-    }
-  }, []);
-
   // Custom Event: Chegou no Checkout - disparar antes do redirecionamento
   const trackChegouCheckout = useCallback((data?: {
     result_type?: string;
@@ -83,7 +68,6 @@ export function useMetaPixel() {
 
   return {
     trackPageView,
-    trackInitiateCheckout,
     trackChegouCheckout,
     setExternalId,
     initWithUser,

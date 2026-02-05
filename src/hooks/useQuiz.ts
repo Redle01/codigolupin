@@ -42,7 +42,7 @@ const QUIZ_STATE_STORAGE_KEY = "quiz_user_state";
 const SESSION_ACTIVE_KEY = "quiz_session_active";
 
 export function useQuiz() {
-  const { trackInitiateCheckout, trackChegouCheckout } = useMetaPixel();
+  const { trackChegouCheckout } = useMetaPixel();
   const [state, setState] = useState<QuizState>(() => {
     if (typeof window !== "undefined") {
       // Check if this is a page refresh (session still active) or a new entry
@@ -262,13 +262,6 @@ export function useQuiz() {
         offer_flow: flow,
       });
       
-      // 2. InitiateCheckout padrão
-      trackInitiateCheckout({
-        content_name: state.result || "Quiz Result",
-        value: flow === 1 ? 47 : 97, // Valor estimado da oferta
-        currency: "BRL",
-      });
-      
       // Pequeno delay para garantir que os eventos sejam enviados antes do redirect
       setTimeout(() => {
         window.location.href = url.toString();
@@ -276,7 +269,7 @@ export function useQuiz() {
     } catch (error) {
       console.error('Invalid checkout URL:', error);
     }
-  }, [state.email, state.result, state.offerFlow, trackInitiateCheckout, trackChegouCheckout]);
+  }, [state.email, state.result, state.offerFlow, trackChegouCheckout]);
 
   return {
     state,
