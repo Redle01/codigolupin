@@ -3,8 +3,8 @@ import { useQuiz } from "@/hooks/useQuiz";
 import { useFunnelMetrics, getOrCreateVisitorId } from "@/hooks/useFunnelMetrics";
 import { useMetaPixel } from "@/hooks/useMetaPixel";
 import { quizConfig } from "@/lib/quizConfig";
-import { isInternalAccess } from "@/lib/environment";
 import { QuizLanding } from "./QuizLanding";
+import { AdminNavPanel } from "./AdminNavPanel";
 
 // Lazy load non-critical components
 const QuizQuestion = lazy(() => 
@@ -44,6 +44,9 @@ export function Quiz() {
     redirectToCheckout,
     questions,
     results,
+    goToStep,
+    setResultDirect,
+    isInternal,
   } = useQuiz();
 
   const { metrics, trackPageView } = useFunnelMetrics();
@@ -54,14 +57,14 @@ export function Quiz() {
   // Initialize Meta Pixel with visitor_id (skip in internal environments)
   useEffect(() => {
     // Não inicializar Meta Pixel em ambiente interno
-    if (isInternalAccess()) return;
+    if (isInternal) return;
     
     if (!pixelInitializedRef.current) {
       const visitorId = getOrCreateVisitorId();
       setExternalId(visitorId);
       pixelInitializedRef.current = true;
     }
-  }, [setExternalId]);
+  }, [setExternalId, isInternal]);
 
   // Track initial visit
   useEffect(() => {
@@ -99,7 +102,7 @@ export function Quiz() {
   // Track page views - send to server on every step change (skip in internal environments)
   useEffect(() => {
     // Não rastrear em ambiente interno
-    if (isInternalAccess()) {
+    if (isInternal) {
       console.debug("[Quiz] Skipping tracking in internal environment");
       return;
     }
@@ -148,6 +151,18 @@ export function Quiz() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Admin navigation panel - only visible in internal environment */}
+      {isInternal && (
+        <AdminNavPanel
+          currentStep={state.currentStep}
+          currentQuestion={state.currentQuestion}
+          currentResult={state.result}
+          onGoToStep={goToStep}
+          onSetResult={setResultDirect}
+          totalQuestions={questions.length}
+        />
+      )}
+
       {state.currentStep === "landing" && (
         <MemoizedQuizLanding
           onStart={startQuiz}

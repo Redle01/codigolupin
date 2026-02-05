@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { quizQuestions, quizResults, ResultType, quizConfig } from "@/lib/quizConfig";
 import { getOrCreateVisitorId } from "./useFunnelMetrics";
 import { useMetaPixel } from "./useMetaPixel";
@@ -284,6 +284,30 @@ export function useQuiz() {
     }
   }, [state.email, state.result, state.offerFlow, trackChegouCheckout]);
 
+  // Admin-only navigation functions (protected by isInternalAccess)
+  const goToStep = useCallback((step: QuizState["currentStep"], questionIndex?: number) => {
+    if (!isInternalAccess()) return;
+    
+    setState((prev) => ({
+      ...prev,
+      currentStep: step,
+      currentQuestion: questionIndex ?? prev.currentQuestion,
+    }));
+  }, []);
+
+  const setResultDirect = useCallback((resultType: ResultType) => {
+    if (!isInternalAccess()) return;
+    
+    setState((prev) => ({
+      ...prev,
+      result: resultType,
+      currentStep: "result",
+    }));
+  }, []);
+
+  // Memoize isInternal to avoid recalculating
+  const isInternal = useMemo(() => isInternalAccess(), []);
+
   return {
     state,
     startQuiz,
@@ -296,6 +320,10 @@ export function useQuiz() {
     redirectToCheckout,
     questions: quizQuestions,
     results: quizResults,
+    // Admin-only functions
+    goToStep,
+    setResultDirect,
+    isInternal,
   };
 }
 
