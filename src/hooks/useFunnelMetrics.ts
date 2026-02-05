@@ -104,7 +104,7 @@ export function useFunnelMetrics() {
   }, []);
 
   // Fetch metrics from server (requires admin auth)
-  const refreshMetrics = useCallback(async () => {
+  const refreshMetrics = useCallback(async (options?: { startDate?: Date; endDate?: Date }) => {
     setIsLoading(true);
     
     try {
@@ -112,8 +112,21 @@ export function useFunnelMetrics() {
       // Get current session for auth header
       const { data: { session } } = await supabase.auth.getSession();
       
+      // Build request body with optional date filters
+      const requestBody: Record<string, unknown> = { action: "stats" };
+      
+      if (options?.startDate) {
+        requestBody.startDate = options.startDate.toISOString();
+      }
+      if (options?.endDate) {
+        // Adjust to end of day
+        const endOfDay = new Date(options.endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        requestBody.endDate = endOfDay.toISOString();
+      }
+      
       const { data, error } = await supabase.functions.invoke("quiz-metrics", {
-        body: { action: "stats" },
+        body: requestBody,
         headers: session?.access_token ? {
           Authorization: `Bearer ${session.access_token}`
         } : undefined,

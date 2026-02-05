@@ -46,7 +46,7 @@ export default function Admin() {
   const handleRefreshAll = useCallback(() => {
     setIsRefreshing(true);
     Promise.all([
-      refreshMetrics(),
+      refreshMetrics({ startDate: dateRange.startDate, endDate: dateRange.endDate }),
       fetchStats(),
       fetchTimeline({ startDate: dateRange.startDate, endDate: dateRange.endDate }),
       fetchVisitors(),
@@ -55,13 +55,14 @@ export default function Admin() {
     });
   }, [refreshMetrics, fetchStats, fetchTimeline, fetchVisitors, dateRange]);
 
-  // Handler para mudança de datas
+  // Handler para mudança de datas - atualiza funil e timeline juntos
   const handleDateChange = useCallback((start: Date | undefined, end: Date | undefined) => {
     setDateRange({ startDate: start, endDate: end });
     if (start && end) {
+      refreshMetrics({ startDate: start, endDate: end });
       fetchTimeline({ startDate: start, endDate: end });
     }
-  }, [fetchTimeline]);
+  }, [refreshMetrics, fetchTimeline]);
 
   // Realtime subscription
   const { isConnected, lastUpdate } = useRealtimeAdmin({
@@ -73,12 +74,13 @@ export default function Admin() {
   // Refresh data when admin logs in
   useEffect(() => {
     if (user && isAdmin) {
-      refreshMetrics();
+      refreshMetrics({ startDate: dateRange.startDate, endDate: dateRange.endDate });
       fetchStats();
       fetchTimeline({ startDate: dateRange.startDate, endDate: dateRange.endDate });
       fetchVisitors();
     }
-  }, [user, isAdmin, refreshMetrics, fetchStats, fetchTimeline, fetchVisitors, dateRange.startDate, dateRange.endDate]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isAdmin]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -285,16 +287,23 @@ export default function Admin() {
             {/* Funnel Metrics Inline */}
             <Card>
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <CardTitle className="text-lg">Métricas do Funil</CardTitle>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => resetMetrics()}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    Resetar Métricas
-                  </Button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <DateRangePicker
+                      startDate={dateRange.startDate}
+                      endDate={dateRange.endDate}
+                      onDateChange={handleDateChange}
+                    />
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => resetMetrics()}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      Resetar
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -309,14 +318,7 @@ export default function Admin() {
             
             {/* Timeline Charts */}
             <div className="mt-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                <h3 className="text-lg font-semibold">Evolução Temporal</h3>
-                <DateRangePicker
-                  startDate={dateRange.startDate}
-                  endDate={dateRange.endDate}
-                  onDateChange={handleDateChange}
-                />
-              </div>
+              <h3 className="text-lg font-semibold mb-4">Evolução Temporal</h3>
               <LeadsTimelineChart 
                 timeline={timeline}
                 isLoading={isTimelineLoading}
