@@ -1,7 +1,6 @@
 import { useState, useEffect, memo } from "react";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
 import { Brain, Sparkles, Target, CheckCircle } from "lucide-react";
-import { ParticleBackground } from "./ParticleBackground";
 
 interface QuizLoadingProps {
   onComplete: () => void;
@@ -67,9 +66,6 @@ export const QuizLoading = memo(function QuizLoading({ onComplete }: QuizLoading
         exit={{ opacity: 0 }}
         className="min-h-screen bg-background flex items-center justify-center p-4 relative"
       >
-        {/* Particle effects */}
-        <ParticleBackground />
-
         <div className="w-full max-w-md text-center relative z-10">
           {/* Animated Icon */}
           <m.div

@@ -1,7 +1,6 @@
 import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ParticleBackground } from "./ParticleBackground";
 
 interface QuizLandingProps {
   onStart: () => void;
@@ -12,8 +11,6 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
   return (
     <LazyMotion features={domAnimation} strict>
       <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8 md:px-4 md:py-8 relative">
-        {/* Particle effects */}
-        <ParticleBackground />
 
         {/* Decorative elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">

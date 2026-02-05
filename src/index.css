@@ -143,41 +143,6 @@
       0 0 20px hsl(350 55% 38% / 0.3);
   }
 
-  /* GPU-accelerated particle animation */
-  @keyframes particle-float {
-    0%, 100% {
-      opacity: 0.15;
-      transform: translate3d(0, 0, 0);
-    }
-    25% {
-      opacity: 0.3;
-      transform: translate3d(15px, -30px, 0);
-    }
-    50% {
-      opacity: 0.35;
-      transform: translate3d(-10px, -15px, 0);
-    }
-    75% {
-      opacity: 0.25;
-      transform: translate3d(5px, -40px, 0);
-    }
-  }
-
-  .animate-particle-float {
-    animation: particle-float linear infinite;
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-    transform: translateZ(0);
-  }
-
-  .bg-gold-particle {
-    background-color: hsl(var(--gold));
-  }
-
-  .bg-burgundy-particle {
-    background-color: hsl(var(--burgundy));
-  }
-
   /* Optimize button transitions */
   button {
     will-change: transform;
