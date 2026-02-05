@@ -14,6 +14,8 @@ interface TrackEventRequest {
 
 interface StatsRequest {
   action: "stats";
+  startDate?: string;
+  endDate?: string;
 }
 
 interface ResetRequest {
@@ -138,11 +140,24 @@ serve(async (req: Request): Promise<Response> => {
         );
       }
 
-      // Get all events
-      const { data: events, error } = await supabaseAdmin
+      // Extract date filters from request
+      const { startDate, endDate } = body as StatsRequest;
+
+      // Build query with optional date filter
+      let query = supabaseAdmin
         .from("quiz_funnel_events")
         .select("visitor_id, page_key, created_at")
         .order("created_at", { ascending: true });
+
+      // Apply date filters if provided
+      if (startDate) {
+        query = query.gte("created_at", startDate);
+      }
+      if (endDate) {
+        query = query.lte("created_at", endDate);
+      }
+
+      const { data: events, error } = await query;
 
       if (error) {
         console.error("Error fetching events:", error);
