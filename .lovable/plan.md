@@ -1,306 +1,114 @@
 
-# Plano: Otimização Extrema de Performance do Funil
 
-## Objetivo
-Abrir a primeira página em **menos de 3 segundos** (meta: < 2s) em Wi-Fi, 4G e 5G, mantendo 100% do design, copy, estrutura, responsividade e funcionalidades.
+# Plano: Remover Evento InitiateCheckout do Funil
 
----
+## Problema Identificado
 
-## Análise do Estado Atual
+O funil está disparando o evento `InitiateCheckout` do Meta Pixel antes do redirecionamento para o checkout da Ticto. Isso causa:
+- Duplicidade de eventos (funil + checkout da Ticto)
+- Dados incorretos/antecipados sendo enviados ao Meta Ads
+- Otimização de campanha comprometida
 
-### Pontos Positivos Já Implementados
-- Lazy loading de componentes (QuizQuestion, EmailCapture, QuizLoading, QuizResult)
-- LazyMotion com domAnimation (framer-motion otimizado)
-- Tracking assíncrono via requestIdleCallback
-- CSS crítico inline no index.html
-- Preload não-bloqueante de fontes
-- Memoização de componentes (memo)
-- GPU acceleration para animações de partículas
+## Arquivos a Modificar
 
-### Oportunidades de Otimização Identificadas
+### 1. `src/hooks/useQuiz.ts`
 
-| Categoria | Problema | Impacto |
-|-----------|----------|---------|
-| Fonts | Carrega 2 fontes (Archivo + Playfair Display) | ~50-80KB |
-| Bundle | Muitos componentes UI não utilizados no funil | ~100KB+ |
-| Scripts | Meta Pixel carrega síncronamente | Bloqueia render |
-| Supabase | Client inicializa no bundle principal | ~30KB |
-| Particles | 8 partículas com animação CSS contínua | CPU usage |
-| Preload | Falta preconnect para Supabase | Latência |
+**Remover o disparo do `trackInitiateCheckout`** na função `redirectToCheckout`:
 
----
+```typescript
+// Linha 45 - ANTES
+const { trackInitiateCheckout, trackChegouCheckout } = useMetaPixel();
 
-## Otimizações a Implementar
+// Linha 45 - DEPOIS (remover trackInitiateCheckout)
+const { trackChegouCheckout } = useMetaPixel();
+```
 
-### 1. Adiar Carregamento do Meta Pixel (index.html)
-
-O Meta Pixel está carregando síncronamente e bloqueando o render inicial. Vamos adiar para após o carregamento da página.
-
-**Arquivo:** `index.html`
-
-```html
-<!-- Antes: Meta Pixel síncrono -->
-<script>
-!function(f,b,e,v,n,t,s)
-{...}
-fbq('init', '1585747689119987');
-</script>
-
-<!-- Depois: Meta Pixel adiado para após window.load -->
-<script>
-window.addEventListener('load', function() {
-  !function(f,b,e,v,n,t,s)
-  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-  n.queue=[];t=b.createElement(e);t.async=!0;
-  t.src=v;s=b.getElementsByTagName(e)[0];
-  s.parentNode.insertBefore(t,s)}(window, document,'script',
-  'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '1585747689119987');
+```typescript
+// Linhas 265-270 - REMOVER COMPLETAMENTE
+// 2. InitiateCheckout padrão
+trackInitiateCheckout({
+  content_name: state.result || "Quiz Result",
+  value: flow === 1 ? 47 : 97,
+  currency: "BRL",
 });
-</script>
 ```
 
-**Benefício:** ~200-300ms de melhoria no First Contentful Paint (FCP)
+```typescript
+// Linha 279 - ANTES
+}, [state.email, state.result, state.offerFlow, trackInitiateCheckout, trackChegouCheckout]);
+
+// DEPOIS (remover trackInitiateCheckout das dependências)
+}, [state.email, state.result, state.offerFlow, trackChegouCheckout]);
+```
 
 ---
 
-### 2. Adicionar Preconnects Críticos (index.html)
+### 2. `src/hooks/useMetaPixel.ts`
 
-Adicionar preconnects para domínios críticos que serão acessados logo após o carregamento.
+**Remover a função `trackInitiateCheckout`** que não será mais utilizada:
 
-**Adicionar após os preconnects de fontes:**
-
-```html
-<!-- Preconnect to Supabase for faster API calls -->
-<link rel="preconnect" href="https://enbhyeddogbocxgttkkd.supabase.co" crossorigin />
-
-<!-- DNS prefetch for Meta Pixel (loaded after page load) -->
-<link rel="dns-prefetch" href="https://connect.facebook.net" />
-```
-
-**Benefício:** ~100-150ms de economia em conexões subsequentes
-
----
-
-### 3. Remover Fonte Playfair Display (index.html)
-
-A fonte Playfair Display não é mais utilizada no funil (removemos font-serif-display anteriormente). Remover do preload economiza ~40KB.
-
-**Alterar o link de fontes de:**
-```html
-href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap"
-```
-
-**Para:**
-```html
-href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap"
-```
-
-**Benefício:** ~40KB menos de download, ~100-200ms de economia
-
----
-
-### 4. Otimizar Renderização do ParticleBackground
-
-Reduzir o número de partículas de 8 para 5 e simplificar animações para reduzir uso de CPU.
-
-**Arquivo:** `src/components/quiz/ParticleBackground.tsx`
-
-```tsx
-// Antes: 8 partículas
-Array.from({ length: 8 }, ...)
-
-// Depois: 5 partículas (suficiente para efeito visual)
-Array.from({ length: 5 }, ...)
-```
-
-Também adicionar `content-visibility: auto` para partículas fora da viewport.
-
-**Benefício:** ~15% menos uso de CPU em dispositivos móveis
-
----
-
-### 5. Otimizar Critical Rendering Path (index.html)
-
-Expandir o CSS crítico inline para incluir estilos da landing page, eliminando FOUC (Flash of Unstyled Content).
-
-**Adicionar ao bloco de CSS crítico:**
-
-```html
-<style>
-  body { 
-    background-color: hsl(0 0% 4%); 
-    color: hsl(45 29% 90%);
-    margin: 0;
-    font-family: 'Archivo';
+```typescript
+// Linhas 29-42 - REMOVER COMPLETAMENTE
+// InitiateCheckout - disparar no clique do CTA que leva ao checkout
+const trackInitiateCheckout = useCallback((data?: {
+  content_name?: string;
+  value?: number;
+  currency?: string;
+}) => {
+  if (typeof window !== "undefined" && window.fbq) {
+    window.fbq("track", "InitiateCheckout", {
+      content_name: data?.content_name || "Quiz Result",
+      value: data?.value || 0,
+      currency: data?.currency || "BRL",
+    });
   }
-  #root { 
-    min-height: 100vh; 
-    min-height: 100dvh;
-  }
-  /* Critical above-the-fold styles */
-  .bg-background { background-color: hsl(0 0% 4%); }
-  .min-h-screen { min-height: 100vh; min-height: 100dvh; }
-  .flex { display: flex; }
-  .flex-col { flex-direction: column; }
-  .items-center { align-items: center; }
-  .justify-center { justify-content: center; }
-  .text-center { text-align: center; }
-</style>
+}, []);
 ```
 
-**Benefício:** Elimina flash branco, melhora LCP em ~50-100ms
-
----
-
-### 6. Lazy Load do Supabase Client para Landing (vite.config.ts)
-
-Configurar o Vite para separar o chunk do Supabase, permitindo que a landing page carregue sem o SDK completo.
-
-**Arquivo:** `vite.config.ts`
-
-```ts
-build: {
-  rollupOptions: {
-    output: {
-      manualChunks: {
-        'vendor-supabase': ['@supabase/supabase-js'],
-        'vendor-framer': ['framer-motion'],
-        'vendor-react-query': ['@tanstack/react-query'],
-      }
-    }
-  }
-}
-```
-
-**Benefício:** Chunks menores, carregamento paralelo mais eficiente
-
----
-
-### 7. Otimizar useQuiz para Lazy Supabase (src/hooks/useQuiz.ts)
-
-O Supabase só precisa ser carregado quando o usuário submete o email (não na landing).
-
-**Alterar import estático para dinâmico:**
-
-```ts
-// Antes
-import { supabase } from "@/integrations/supabase/client";
-
-// Depois - lazy import apenas quando necessário
-const getSupabase = async () => {
-  const { supabase } = await import("@/integrations/supabase/client");
-  return supabase;
+```typescript
+// Linha 85-86 - ANTES
+return {
+  trackPageView,
+  trackInitiateCheckout,
+  trackChegouCheckout,
+  ...
 };
 
-// No submitEmail:
-const supabase = await getSupabase();
+// DEPOIS (remover trackInitiateCheckout do return)
+return {
+  trackPageView,
+  trackChegouCheckout,
+  ...
+};
 ```
 
-**Benefício:** ~30KB a menos no bundle inicial
-
 ---
 
-### 8. Otimizar useFunnelMetrics para Tracking Lazy (src/hooks/useFunnelMetrics.ts)
+## Resultado Final
 
-Similar ao acima, lazy load do Supabase para tracking.
-
-```ts
-// Async tracking com lazy import
-async function sendTrackingEvent(visitorId: string, page: string) {
-  try {
-    const { supabase } = await import("@/integrations/supabase/client");
-    await supabase.functions.invoke("quiz-metrics", {...});
-  } catch (error) {
-    console.debug("Tracking error:", error);
-  }
-}
-```
-
-**Benefício:** Landing page carrega sem Supabase SDK
-
----
-
-### 9. Remover CSS Não Utilizado (src/index.css)
-
-Remover a classe `.font-serif-display` que não é mais utilizada no funil.
-
-```css
-/* Remover estas linhas (112-114) */
-.font-serif-display {
-  font-family: 'Playfair Display', Georgia, serif;
-}
-```
-
-**Benefício:** CSS mais limpo, microsegundos de parsing
-
----
-
-### 10. Adicionar Resource Hints para Próxima Etapa (src/components/quiz/Quiz.tsx)
-
-Adicionar prefetch para chunks da próxima etapa baseado no comportamento do usuário.
-
-```tsx
-// No useEffect de preload, adicionar:
-if (state.currentStep === "landing") {
-  // Preload QuizQuestion e também prefetch do chunk
-  const link = document.createElement('link');
-  link.rel = 'prefetch';
-  link.href = '/assets/quiz-question-[hash].js'; // Será resolvido pelo Vite
-  document.head.appendChild(link);
-}
-```
-
-**Alternativa mais robusta:** Usar import() que já faz prefetch automático no Vite.
-
----
-
-## Resumo das Alterações por Arquivo
-
-| Arquivo | Tipo de Alteração |
-|---------|-------------------|
-| `index.html` | Adiar Meta Pixel, adicionar preconnects, remover Playfair Display, expandir CSS crítico |
-| `src/components/quiz/ParticleBackground.tsx` | Reduzir partículas de 8 para 5 |
-| `src/hooks/useQuiz.ts` | Lazy import do Supabase |
-| `src/hooks/useFunnelMetrics.ts` | Lazy import do Supabase |
-| `src/index.css` | Remover .font-serif-display |
-| `vite.config.ts` | Adicionar manualChunks para code splitting otimizado |
-
----
-
-## Impacto Estimado de Performance
-
-| Métrica | Antes (estimado) | Depois (estimado) |
-|---------|------------------|-------------------|
-| FCP (First Contentful Paint) | ~1.5s | ~0.8s |
-| LCP (Largest Contentful Paint) | ~2.5s | ~1.5s |
-| TTI (Time to Interactive) | ~3.0s | ~2.0s |
-| Bundle inicial | ~180KB | ~120KB |
-| Total transferido | ~280KB | ~200KB |
+| Evento | Onde Dispara | Status |
+|--------|--------------|--------|
+| `PageView` | Funil (cada etapa) | Mantido |
+| `ChegouNoCheckout` | Funil (antes do redirect) | Mantido (evento customizado) |
+| `InitiateCheckout` | Checkout Ticto | Exclusivo da Ticto |
 
 ---
 
 ## Garantias
 
-- Copy 100% inalterada
-- Design 100% preservado
-- Estrutura do funil mantida
-- Responsividade intacta
-- Todas as funcionalidades operacionais
-- Rastreamento Meta Pixel funcionando (apenas adiado)
-- Métricas do funil funcionando normalmente
-- Transições e animações suaves
-- Experiência do usuário idêntica
+- Layout, copy e fluxo visual 100% inalterados
+- Apenas ajustes no rastreamento
+- Evento `PageView` continua funcionando normalmente
+- Evento customizado `ChegouNoCheckout` permanece (útil para análise interna)
+- Checkout da Ticto dispara `InitiateCheckout` corretamente
 
 ---
 
 ## Validação Pós-Implementação
 
-1. Testar carregamento em Wi-Fi, 4G simulado e 5G
-2. Verificar que Meta Pixel dispara PageView após load
-3. Confirmar que tracking de métricas funciona
-4. Testar navegação completa pelo funil
-5. Validar que animações continuam fluidas
-6. Confirmar checkout redirect funcionando
+1. Instalar extensão Meta Pixel Helper no Chrome
+2. Navegar pelo funil completo
+3. Verificar que apenas `PageView` é disparado nas etapas
+4. Confirmar que `InitiateCheckout` NÃO aparece no funil
+5. Ir até o checkout da Ticto e confirmar que `InitiateCheckout` dispara lá
+
