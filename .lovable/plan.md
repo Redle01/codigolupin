@@ -1,289 +1,191 @@
 
+# Plano: Modo Admin + Remoção de Partículas
 
-# Plano: Excluir Acessos Internos das Métricas do Funil
+## Resumo
 
-## Análise do Problema
-
-Atualmente, todos os acessos ao funil são contabilizados nas métricas, incluindo:
-- Acessos via ambiente de preview do Lovable (`id-preview--*.lovable.app`)
-- Testes feitos pelo administrador durante desenvolvimento
-- Navegações internas durante edição do projeto
-
-Isso causa inflação de métricas e distorção das taxas de conversão reais.
+Implementar duas melhorias:
+1. **Navegação livre para admin**: Painel de controle flutuante no ambiente Lovable que permite navegar por todas as etapas do funil sem bloqueios
+2. **Remoção de partículas**: Eliminar completamente a animação de partículas da landing e result pages
 
 ---
 
-## Estratégia de Detecção
+## Parte 1: Navegação Irrestrita para Admin
 
-### Método 1: Detecção por URL (Cliente)
+### Estratégia
 
-O ambiente Lovable tem URLs características que podem ser detectadas:
+Criar um componente `AdminNavPanel` que aparece **apenas em ambiente interno** (detectado via `isInternalAccess()`) e permite:
+- Ir diretamente para qualquer etapa (Landing, Q1-Q8, Email, Loading, Result)
+- Escolher qualquer perfil de resultado sem responder perguntas
+- Bypass automático de validações
 
-| Ambiente | Padrão de URL |
-|----------|---------------|
-| **Preview Lovable** | `id-preview--*.lovable.app` |
-| **Publicado** | `codigolupin.lovable.app` ou domínio customizado |
-| **Localhost** | `localhost:*` |
+### Arquivos a Criar/Modificar
 
-### Método 2: Detecção por Parâmetros de Embed (Cliente)
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/quiz/AdminNavPanel.tsx` | **NOVO** - Painel flutuante de navegação admin |
+| `src/hooks/useQuiz.ts` | Adicionar funções de navegação direta: `goToStep`, `setResult` |
+| `src/components/quiz/Quiz.tsx` | Integrar AdminNavPanel |
 
-O Lovable injeta o app dentro de um iframe com parâmetros específicos. Podemos detectar:
-- `window.parent !== window` (está em iframe)
-- Referrer contendo `lovable.dev`
+### Novo Componente: `AdminNavPanel.tsx`
 
-### Método 3: Validação no Backend (Edge Function)
-
-Adicionar validação na Edge Function para rejeitar tracking de origens internas baseado no header `Origin` ou `Referer`.
-
----
-
-## Implementação Escolhida
-
-Implementar **verificação híbrida** (cliente + servidor) para máxima segurança:
-
-1. **Cliente**: Função `isInternalAccess()` que detecta ambiente interno
-2. **Cliente**: Bloquear `trackPageView` e `trackMetaPageView` se for acesso interno
-3. **Backend**: Validar origem no Edge Function `quiz-metrics` e `quiz-submit-email`
-
----
-
-## Arquivos a Modificar
-
-| Arquivo | Tipo de Alteração |
-|---------|-------------------|
-| `src/lib/environment.ts` | **NOVO** - Função utilitária para detectar ambiente interno |
-| `src/hooks/useFunnelMetrics.ts` | Adicionar verificação antes de enviar tracking |
-| `src/components/quiz/Quiz.tsx` | Bloquear Meta Pixel PageView em ambiente interno |
-| `src/hooks/useQuiz.ts` | Bloquear submissão de lead em ambiente interno |
-| `supabase/functions/quiz-metrics/index.ts` | Validar origem no backend (track action) |
-| `supabase/functions/quiz-submit-email/index.ts` | Validar origem no backend |
-
----
-
-## Detalhes de Implementação
-
-### 1. Criar Utilitário de Detecção de Ambiente (`src/lib/environment.ts`)
-
-```typescript
-// Padrões de URL que identificam ambiente interno do Lovable
-const INTERNAL_URL_PATTERNS = [
-  /^https?:\/\/id-preview--[a-z0-9-]+\.lovable\.app/i,  // Preview Lovable
-  /^https?:\/\/localhost(:\d+)?/i,                       // Localhost
-  /^https?:\/\/127\.0\.0\.1(:\d+)?/i,                   // Localhost IP
-  /^https?:\/\/.*\.lovable\.dev/i,                      // Lovable Dev
-];
-
-// URL de produção permitida
-const PRODUCTION_URL = "https://codigolupin.lovable.app";
-
-/**
- * Detecta se o acesso está sendo feito em ambiente interno (Lovable preview/dev)
- * @returns true se for acesso interno (não deve ser rastreado)
- */
-export function isInternalAccess(): boolean {
-  if (typeof window === "undefined") return true; // SSR = interno
-  
-  const currentUrl = window.location.href;
-  const origin = window.location.origin;
-  
-  // 1. Verificar se está em iframe (editor Lovable)
-  if (window.parent !== window) {
-    // Está em iframe - verificar se é Lovable
-    try {
-      // Tentativa de acessar parent vai falhar se for cross-origin
-      // Se for Lovable, o parent é lovable.dev
-      if (document.referrer.includes("lovable.dev")) {
-        return true;
-      }
-    } catch {
-      // Cross-origin - pode ser embed externo, permitir
-    }
-  }
-  
-  // 2. Verificar padrões de URL internos
-  for (const pattern of INTERNAL_URL_PATTERNS) {
-    if (pattern.test(origin)) {
-      return true;
-    }
-  }
-  
-  // 3. Verificar se NÃO é a URL de produção conhecida
-  // (proteção extra contra novos domínios de preview)
-  if (!origin.startsWith(PRODUCTION_URL.replace(/\/$/, ""))) {
-    // Não é produção - considerar interno por segurança
-    // Exceto se for domínio customizado (verificar se tem lovable no nome)
-    if (origin.includes("lovable")) {
-      return true;
-    }
-  }
-  
-  return false;
-}
-
-/**
- * Retorna informações do ambiente atual para debugging
- */
-export function getEnvironmentInfo(): {
-  isInternal: boolean;
-  origin: string;
-  inIframe: boolean;
-  referrer: string;
-} {
-  if (typeof window === "undefined") {
-    return { isInternal: true, origin: "ssr", inIframe: false, referrer: "" };
-  }
-  
-  return {
-    isInternal: isInternalAccess(),
-    origin: window.location.origin,
-    inIframe: window.parent !== window,
-    referrer: document.referrer,
-  };
-}
+```tsx
+// Painel flutuante discreto (apenas em ambiente interno)
+// - Posicionado no canto inferior direito
+// - Colapsável para não atrapalhar visualização
+// - Botões para cada etapa do funil
+// - Seletor de perfil de resultado
 ```
 
-### 2. Modificar `useFunnelMetrics.ts` - Bloquear Tracking Interno
+**Funcionalidades do Painel:**
+
+| Botão | Ação |
+|-------|------|
+| Landing | Ir para landing page |
+| Q1 - Q8 | Ir diretamente para qualquer pergunta |
+| Email | Ir para captura de email (sem preencher) |
+| Loading | Ver animação de loading |
+| Resultado | Ver página de resultado (com seletor de perfil) |
+
+### Modificações no `useQuiz.ts`
+
+Adicionar funções de navegação direta que **só funcionam em ambiente interno**:
 
 ```typescript
-import { isInternalAccess } from "@/lib/environment";
-
-// Na função trackPageView:
-const trackPageView = useCallback((page: keyof FunnelMetrics["pageViews"]) => {
-  // Não rastrear acessos internos (Lovable preview/admin)
-  if (isInternalAccess()) {
-    console.debug("[Metrics] Skipping internal access tracking");
-    return;
-  }
+// Ir diretamente para qualquer step
+const goToStep = useCallback((step: QuizState["currentStep"], questionIndex?: number) => {
+  if (!isInternalAccess()) return; // Proteção
   
-  const visitorId = getOrCreateVisitorId();
-  
-  scheduleIdleWork(() => {
-    sendTrackingEvent(visitorId, page);
-  });
+  setState((prev) => ({
+    ...prev,
+    currentStep: step,
+    currentQuestion: questionIndex ?? prev.currentQuestion,
+  }));
 }, []);
+
+// Definir resultado diretamente (para visualizar diferentes perfis)
+const setResultDirect = useCallback((resultType: ResultType) => {
+  if (!isInternalAccess()) return; // Proteção
+  
+  setState((prev) => ({
+    ...prev,
+    result: resultType,
+    currentStep: "result",
+  }));
+}, []);
+
+// Pular loading e ir direto para resultado
+const skipLoading = useCallback(() => {
+  if (!isInternalAccess()) return; // Proteção
+  completeLoading();
+}, [completeLoading]);
 ```
 
-### 3. Modificar `Quiz.tsx` - Bloquear Meta Pixel em Ambiente Interno
+### Integração no `Quiz.tsx`
 
-```typescript
+```tsx
+import { AdminNavPanel } from "./AdminNavPanel";
 import { isInternalAccess } from "@/lib/environment";
 
-// No useEffect de tracking:
-useEffect(() => {
-  // Não rastrear em ambiente interno
-  if (isInternalAccess()) {
-    console.debug("[Quiz] Skipping tracking in internal environment");
-    return;
-  }
-
-  let currentPage: string;
-  // ... resto da lógica
-  
-  if (currentPage !== lastTrackedPage.current) {
-    trackPageView(currentPage as keyof typeof metrics.pageViews);
-    trackMetaPageView();
-    lastTrackedPage.current = currentPage;
-  }
-}, [state.currentStep, state.currentQuestion, trackPageView, trackMetaPageView]);
-
-// No useEffect de inicialização do Meta Pixel:
-useEffect(() => {
-  // Não inicializar Meta Pixel em ambiente interno
-  if (isInternalAccess()) return;
-  
-  if (!pixelInitializedRef.current) {
-    const visitorId = getOrCreateVisitorId();
-    setExternalId(visitorId);
-    pixelInitializedRef.current = true;
-  }
-}, [setExternalId]);
-```
-
-### 4. Modificar `useQuiz.ts` - Bloquear Leads Internos
-
-```typescript
-import { isInternalAccess } from "@/lib/environment";
-
-// Na função submitEmail:
-const submitEmail = useCallback(async () => {
-  if (!state.email) return false;
-  
-  // Não salvar leads em ambiente interno
-  if (isInternalAccess()) {
-    console.debug("[Quiz] Skipping email submission in internal environment");
-    setState((prev) => ({ ...prev, isSubmitting: false }));
-    return true; // Simular sucesso para continuar o fluxo
-  }
-  
-  setState((prev) => ({ ...prev, isSubmitting: true }));
-  // ... resto da lógica
-}, [state.email, state.answers, state.offerFlow]);
-```
-
-### 5. Edge Function `quiz-metrics` - Validação de Origem
-
-```typescript
-// No início da função, antes de processar "track" action:
-if (action === "track") {
-  const origin = req.headers.get("origin") || "";
-  const referer = req.headers.get("referer") || "";
-  
-  // Lista de origens permitidas (produção)
-  const ALLOWED_ORIGINS = [
-    "https://codigolupin.lovable.app",
-    // Adicionar domínios customizados se houver
-  ];
-  
-  // Lista de padrões de origens bloqueadas (interno)
-  const BLOCKED_PATTERNS = [
-    /id-preview--.*\.lovable\.app/i,
-    /localhost/i,
-    /127\.0\.0\.1/i,
-    /\.lovable\.dev/i,
-  ];
-  
-  // Verificar se origem é bloqueada
-  const isBlocked = BLOCKED_PATTERNS.some(pattern => 
-    pattern.test(origin) || pattern.test(referer)
-  );
-  
-  if (isBlocked) {
-    console.log("Blocked internal tracking request from:", origin || referer);
-    return new Response(
-      JSON.stringify({ success: true, blocked: true, reason: "internal_access" }),
-      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-    );
-  }
-  
-  // ... resto do processamento
-}
-```
-
-### 6. Edge Function `quiz-submit-email` - Validação de Origem
-
-```typescript
-// Após as validações iniciais, antes de inserir lead:
-const origin = req.headers.get("origin") || "";
-const referer = req.headers.get("referer") || "";
-
-const BLOCKED_PATTERNS = [
-  /id-preview--.*\.lovable\.app/i,
-  /localhost/i,
-  /127\.0\.0\.1/i,
-  /\.lovable\.dev/i,
-];
-
-const isInternalRequest = BLOCKED_PATTERNS.some(pattern => 
-  pattern.test(origin) || pattern.test(referer)
+// Dentro do componente Quiz:
+return (
+  <div className="min-h-screen bg-background">
+    {/* Painel de navegação admin - só aparece em ambiente interno */}
+    {isInternalAccess() && (
+      <AdminNavPanel
+        currentStep={state.currentStep}
+        currentQuestion={state.currentQuestion}
+        currentResult={state.result}
+        onGoToStep={goToStep}
+        onSetResult={setResultDirect}
+        totalQuestions={questions.length}
+      />
+    )}
+    
+    {/* Resto do componente permanece igual */}
+    ...
+  </div>
 );
+```
 
-if (isInternalRequest) {
-  console.log("Blocked internal lead submission from:", origin || referer);
-  return new Response(
-    JSON.stringify({ success: true, blocked: true, reason: "internal_access" }),
-    { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
-  );
-}
+### Design do AdminNavPanel
+
+```text
+┌─────────────────────────────────────┐
+│  🔧 Admin Nav          [−] [×]     │
+├─────────────────────────────────────┤
+│  Etapas do Funil:                   │
+│  [Landing] [Q1] [Q2] [Q3] [Q4]     │
+│  [Q5] [Q6] [Email] [Q7] [Q8]       │
+│  [Loading] [Result]                 │
+├─────────────────────────────────────┤
+│  Ver Resultado como:                │
+│  [Gentleman] [Estrategista]         │
+│  [Diamante] [Guerreiro]             │
+└─────────────────────────────────────┘
+```
+
+**Características:**
+- Posição fixa no canto inferior direito
+- Botão para minimizar/expandir
+- Visual discreto (semi-transparente, borda sutil)
+- Z-index alto para ficar sobre o conteúdo
+- Não afeta layout do funil
+
+---
+
+## Parte 2: Remoção das Partículas
+
+### Arquivos a Modificar
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/quiz/QuizLanding.tsx` | Remover `<ParticleBackground />` |
+| `src/components/quiz/QuizResult.tsx` | Remover `<ParticleBackground />` |
+| `src/components/quiz/ParticleBackground.tsx` | **DELETAR** (opcional) |
+| `src/index.css` | Remover estilos de partículas (opcional) |
+
+### Modificação em `QuizLanding.tsx`
+
+```diff
+- import { ParticleBackground } from "./ParticleBackground";
+
+  export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
+    return (
+      <LazyMotion features={domAnimation} strict>
+        <div className="...">
+-         {/* Particle effects */}
+-         <ParticleBackground />
+
+          {/* Decorative elements - MANTIDOS */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-1/4 left-1/4 w-32 md:w-64 ..." />
+            <div className="absolute bottom-1/4 right-1/4 w-48 md:w-96 ..." />
+          </div>
+```
+
+### Modificação em `QuizResult.tsx`
+
+```diff
+- import { ParticleBackground } from "./ParticleBackground";
+
+  export const QuizResult = memo(function QuizResult({ result, onCheckout }) {
+    return (
+      <LazyMotion features={domAnimation} strict>
+        <div className="...">
+-         {/* Particle effects */}
+-         <ParticleBackground />
+
+          <div className="flex-1 ...">
+```
+
+### CSS a Remover (opcional - para limpeza)
+
+```css
+/* Em src/index.css - remover estas linhas se deletar ParticleBackground */
+@keyframes particle-float { ... }
+.animate-particle-float { ... }
+.bg-gold-particle { ... }
+.bg-burgundy-particle { ... }
 ```
 
 ---
@@ -291,81 +193,59 @@ if (isInternalRequest) {
 ## Fluxo de Proteção
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    ACESSO AO FUNIL                               │
-└─────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                    ACESSO AO FUNIL                              │
+└────────────────────────────────────────────────────────────────┘
                               │
                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              CLIENTE: isInternalAccess()                         │
-│                                                                  │
-│  Verifica:                                                       │
-│  • URL contém "id-preview--*.lovable.app"? → BLOQUEAR            │
-│  • Está em iframe com referrer lovable.dev? → BLOQUEAR           │
-│  • URL é localhost? → BLOQUEAR                                   │
-│  • URL é codigolupin.lovable.app? → PERMITIR                     │
-└─────────────────────────────────────────────────────────────────┘
+                    ┌───────────────────┐
+                    │ isInternalAccess()│
+                    └─────────┬─────────┘
                               │
           ┌───────────────────┴───────────────────┐
           ▼                                       ▼
-┌──────────────────┐                   ┌──────────────────┐
-│  INTERNO = true  │                   │  INTERNO = false │
-│                  │                   │                  │
-│  • Não rastrear  │                   │  • Enviar track  │
-│  • Não salvar    │                   │  • Salvar lead   │
-│    lead          │                   │  • Meta Pixel    │
-│  • Sem Meta Pixel│                   │                  │
-└──────────────────┘                   └────────┬─────────┘
-                                                │
-                                                ▼
-                              ┌─────────────────────────────────┐
-                              │     BACKEND: Edge Functions      │
-                              │                                  │
-                              │  Valida headers Origin/Referer   │
-                              │  • Padrão bloqueado → Rejeitar   │
-                              │  • Origem válida → Processar     │
-                              └─────────────────────────────────┘
+┌──────────────────────┐               ┌──────────────────────┐
+│   INTERNO = true     │               │   INTERNO = false    │
+│   (Lovable Preview)  │               │   (Produção)         │
+│                      │               │                      │
+│ ✅ AdminNavPanel     │               │ ❌ Sem AdminNavPanel │
+│    visível           │               │                      │
+│ ✅ Navegação livre   │               │ ✅ Fluxo normal      │
+│ ❌ Sem tracking      │               │ ✅ Validações ativas │
+│ ❌ Sem leads salvos  │               │ ✅ Tracking ativo    │
+└──────────────────────┘               └──────────────────────┘
 ```
 
 ---
 
 ## Resultado Esperado
 
-| Cenário | PageView | Lead | Métricas |
-|---------|----------|------|----------|
-| Acesso via `id-preview--*.lovable.app` | ❌ | ❌ | ❌ |
-| Acesso via editor Lovable (iframe) | ❌ | ❌ | ❌ |
-| Acesso via localhost | ❌ | ❌ | ❌ |
-| Acesso via `codigolupin.lovable.app` | ✅ | ✅ | ✅ |
-| Acesso via link externo em aba anônima | ✅ | ✅ | ✅ |
+### Experiência do Admin (Ambiente Lovable)
+- Painel flutuante no canto inferior direito
+- Navegar livremente entre todas as etapas
+- Visualizar qualquer perfil de resultado
+- Testar fluxo sem preencher nada
+- Não polui métricas
 
----
+### Experiência do Usuário Final (Produção)
+- **Nenhuma mudança** no comportamento
+- Sem painel de navegação
+- Fluxo normal com validações
+- Tracking funcionando
 
-## Validação Pós-Implementação
-
-1. **Teste Interno (Preview Lovable)**:
-   - Acessar funil via ambiente Lovable
-   - Verificar console para mensagem "Skipping internal access"
-   - Confirmar que métricas não aumentaram no admin
-
-2. **Teste Externo (Produção)**:
-   - Abrir aba anônima
-   - Acessar `codigolupin.lovable.app`
-   - Navegar pelo funil
-   - Verificar que métricas contabilizam normalmente
-
-3. **Verificar Edge Functions**:
-   - Logs devem mostrar "Blocked internal tracking request" para acessos internos
-   - Logs devem processar normalmente acessos de produção
+### Performance
+- Remoção de partículas = menos animações CSS
+- Carregamento mais rápido da landing page
+- Visual mais limpo e elegante
+- Mantém os elementos decorativos estáticos (blur gradients)
 
 ---
 
 ## Garantias
 
-- Fluxo visual do funil 100% preservado
-- Funcionalidades mantidas em todos os ambientes
-- Apenas tracking é bloqueado em ambiente interno
-- Performance não afetada (verificação é síncrona e leve)
-- Meta Pixel não dispara em ambiente interno
-- Dados do admin dashboard refletem apenas tráfego real
-
+- Admin Panel só aparece em ambiente interno (proteção tripla)
+- Funções de navegação protegidas por `isInternalAccess()`
+- Zero impacto em métricas e rastreamento
+- Layout e tipografia 100% preservados
+- Performance melhorada com remoção de partículas
+- Código do `ParticleBackground` pode ser deletado completamente
