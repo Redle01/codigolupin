@@ -1,10 +1,49 @@
 
 
-# Plano: Adicionar Filtro de Calendário às Métricas do Funil
+# Plano: Excluir Acessos Internos das Métricas do Funil
 
-## Resumo
+## Análise do Problema
 
-Implementar um seletor de datas estilo calendário na seção "Métricas do Funil" do admin, permitindo análise temporal por dia específico ou intervalo de datas. As métricas exibidas no fluxo visual do funil serão filtradas em tempo real.
+Atualmente, todos os acessos ao funil são contabilizados nas métricas, incluindo:
+- Acessos via ambiente de preview do Lovable (`id-preview--*.lovable.app`)
+- Testes feitos pelo administrador durante desenvolvimento
+- Navegações internas durante edição do projeto
+
+Isso causa inflação de métricas e distorção das taxas de conversão reais.
+
+---
+
+## Estratégia de Detecção
+
+### Método 1: Detecção por URL (Cliente)
+
+O ambiente Lovable tem URLs características que podem ser detectadas:
+
+| Ambiente | Padrão de URL |
+|----------|---------------|
+| **Preview Lovable** | `id-preview--*.lovable.app` |
+| **Publicado** | `codigolupin.lovable.app` ou domínio customizado |
+| **Localhost** | `localhost:*` |
+
+### Método 2: Detecção por Parâmetros de Embed (Cliente)
+
+O Lovable injeta o app dentro de um iframe com parâmetros específicos. Podemos detectar:
+- `window.parent !== window` (está em iframe)
+- Referrer contendo `lovable.dev`
+
+### Método 3: Validação no Backend (Edge Function)
+
+Adicionar validação na Edge Function para rejeitar tracking de origens internas baseado no header `Origin` ou `Referer`.
+
+---
+
+## Implementação Escolhida
+
+Implementar **verificação híbrida** (cliente + servidor) para máxima segurança:
+
+1. **Cliente**: Função `isInternalAccess()` que detecta ambiente interno
+2. **Cliente**: Bloquear `trackPageView` e `trackMetaPageView` se for acesso interno
+3. **Backend**: Validar origem no Edge Function `quiz-metrics` e `quiz-submit-email`
 
 ---
 
@@ -12,265 +51,321 @@ Implementar um seletor de datas estilo calendário na seção "Métricas do Funi
 
 | Arquivo | Tipo de Alteração |
 |---------|-------------------|
-| `supabase/functions/quiz-metrics/index.ts` | Adicionar suporte a filtro de datas no action "stats" |
-| `src/hooks/useFunnelMetrics.ts` | Adicionar parâmetros de data ao `refreshMetrics` |
-| `src/pages/Admin.tsx` | Mover DateRangePicker para o Card de Métricas do Funil |
-| `src/components/admin/FunnelMetricsInline.tsx` | Exibir período selecionado (opcional) |
+| `src/lib/environment.ts` | **NOVO** - Função utilitária para detectar ambiente interno |
+| `src/hooks/useFunnelMetrics.ts` | Adicionar verificação antes de enviar tracking |
+| `src/components/quiz/Quiz.tsx` | Bloquear Meta Pixel PageView em ambiente interno |
+| `src/hooks/useQuiz.ts` | Bloquear submissão de lead em ambiente interno |
+| `supabase/functions/quiz-metrics/index.ts` | Validar origem no backend (track action) |
+| `supabase/functions/quiz-submit-email/index.ts` | Validar origem no backend |
 
 ---
 
 ## Detalhes de Implementação
 
-### 1. Edge Function: Suporte a Filtro de Datas (`quiz-metrics`)
-
-Modificar o action `stats` para aceitar parâmetros opcionais `startDate` e `endDate`:
+### 1. Criar Utilitário de Detecção de Ambiente (`src/lib/environment.ts`)
 
 ```typescript
-// Adicionar ao interface
-interface StatsRequest {
-  action: "stats";
-  startDate?: string;  // formato ISO: "2025-02-01T00:00:00.000Z"
-  endDate?: string;    // formato ISO: "2025-02-05T23:59:59.999Z"
+// Padrões de URL que identificam ambiente interno do Lovable
+const INTERNAL_URL_PATTERNS = [
+  /^https?:\/\/id-preview--[a-z0-9-]+\.lovable\.app/i,  // Preview Lovable
+  /^https?:\/\/localhost(:\d+)?/i,                       // Localhost
+  /^https?:\/\/127\.0\.0\.1(:\d+)?/i,                   // Localhost IP
+  /^https?:\/\/.*\.lovable\.dev/i,                      // Lovable Dev
+];
+
+// URL de produção permitida
+const PRODUCTION_URL = "https://codigolupin.lovable.app";
+
+/**
+ * Detecta se o acesso está sendo feito em ambiente interno (Lovable preview/dev)
+ * @returns true se for acesso interno (não deve ser rastreado)
+ */
+export function isInternalAccess(): boolean {
+  if (typeof window === "undefined") return true; // SSR = interno
+  
+  const currentUrl = window.location.href;
+  const origin = window.location.origin;
+  
+  // 1. Verificar se está em iframe (editor Lovable)
+  if (window.parent !== window) {
+    // Está em iframe - verificar se é Lovable
+    try {
+      // Tentativa de acessar parent vai falhar se for cross-origin
+      // Se for Lovable, o parent é lovable.dev
+      if (document.referrer.includes("lovable.dev")) {
+        return true;
+      }
+    } catch {
+      // Cross-origin - pode ser embed externo, permitir
+    }
+  }
+  
+  // 2. Verificar padrões de URL internos
+  for (const pattern of INTERNAL_URL_PATTERNS) {
+    if (pattern.test(origin)) {
+      return true;
+    }
+  }
+  
+  // 3. Verificar se NÃO é a URL de produção conhecida
+  // (proteção extra contra novos domínios de preview)
+  if (!origin.startsWith(PRODUCTION_URL.replace(/\/$/, ""))) {
+    // Não é produção - considerar interno por segurança
+    // Exceto se for domínio customizado (verificar se tem lovable no nome)
+    if (origin.includes("lovable")) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
-// No handler do action "stats"
-if (action === "stats") {
-  const { startDate, endDate } = body as StatsRequest;
-  
-  // Build query with optional date filter
-  let query = supabaseAdmin
-    .from("quiz_funnel_events")
-    .select("visitor_id, page_key, created_at")
-    .order("created_at", { ascending: true });
-    
-  // Apply date filters if provided
-  if (startDate) {
-    query = query.gte("created_at", startDate);
-  }
-  if (endDate) {
-    query = query.lte("created_at", endDate);
+/**
+ * Retorna informações do ambiente atual para debugging
+ */
+export function getEnvironmentInfo(): {
+  isInternal: boolean;
+  origin: string;
+  inIframe: boolean;
+  referrer: string;
+} {
+  if (typeof window === "undefined") {
+    return { isInternal: true, origin: "ssr", inIframe: false, referrer: "" };
   }
   
-  const { data: events, error } = await query;
+  return {
+    isInternal: isInternalAccess(),
+    origin: window.location.origin,
+    inIframe: window.parent !== window,
+    referrer: document.referrer,
+  };
+}
+```
+
+### 2. Modificar `useFunnelMetrics.ts` - Bloquear Tracking Interno
+
+```typescript
+import { isInternalAccess } from "@/lib/environment";
+
+// Na função trackPageView:
+const trackPageView = useCallback((page: keyof FunnelMetrics["pageViews"]) => {
+  // Não rastrear acessos internos (Lovable preview/admin)
+  if (isInternalAccess()) {
+    console.debug("[Metrics] Skipping internal access tracking");
+    return;
+  }
+  
+  const visitorId = getOrCreateVisitorId();
+  
+  scheduleIdleWork(() => {
+    sendTrackingEvent(visitorId, page);
+  });
+}, []);
+```
+
+### 3. Modificar `Quiz.tsx` - Bloquear Meta Pixel em Ambiente Interno
+
+```typescript
+import { isInternalAccess } from "@/lib/environment";
+
+// No useEffect de tracking:
+useEffect(() => {
+  // Não rastrear em ambiente interno
+  if (isInternalAccess()) {
+    console.debug("[Quiz] Skipping tracking in internal environment");
+    return;
+  }
+
+  let currentPage: string;
+  // ... resto da lógica
+  
+  if (currentPage !== lastTrackedPage.current) {
+    trackPageView(currentPage as keyof typeof metrics.pageViews);
+    trackMetaPageView();
+    lastTrackedPage.current = currentPage;
+  }
+}, [state.currentStep, state.currentQuestion, trackPageView, trackMetaPageView]);
+
+// No useEffect de inicialização do Meta Pixel:
+useEffect(() => {
+  // Não inicializar Meta Pixel em ambiente interno
+  if (isInternalAccess()) return;
+  
+  if (!pixelInitializedRef.current) {
+    const visitorId = getOrCreateVisitorId();
+    setExternalId(visitorId);
+    pixelInitializedRef.current = true;
+  }
+}, [setExternalId]);
+```
+
+### 4. Modificar `useQuiz.ts` - Bloquear Leads Internos
+
+```typescript
+import { isInternalAccess } from "@/lib/environment";
+
+// Na função submitEmail:
+const submitEmail = useCallback(async () => {
+  if (!state.email) return false;
+  
+  // Não salvar leads em ambiente interno
+  if (isInternalAccess()) {
+    console.debug("[Quiz] Skipping email submission in internal environment");
+    setState((prev) => ({ ...prev, isSubmitting: false }));
+    return true; // Simular sucesso para continuar o fluxo
+  }
+  
+  setState((prev) => ({ ...prev, isSubmitting: true }));
+  // ... resto da lógica
+}, [state.email, state.answers, state.offerFlow]);
+```
+
+### 5. Edge Function `quiz-metrics` - Validação de Origem
+
+```typescript
+// No início da função, antes de processar "track" action:
+if (action === "track") {
+  const origin = req.headers.get("origin") || "";
+  const referer = req.headers.get("referer") || "";
+  
+  // Lista de origens permitidas (produção)
+  const ALLOWED_ORIGINS = [
+    "https://codigolupin.lovable.app",
+    // Adicionar domínios customizados se houver
+  ];
+  
+  // Lista de padrões de origens bloqueadas (interno)
+  const BLOCKED_PATTERNS = [
+    /id-preview--.*\.lovable\.app/i,
+    /localhost/i,
+    /127\.0\.0\.1/i,
+    /\.lovable\.dev/i,
+  ];
+  
+  // Verificar se origem é bloqueada
+  const isBlocked = BLOCKED_PATTERNS.some(pattern => 
+    pattern.test(origin) || pattern.test(referer)
+  );
+  
+  if (isBlocked) {
+    console.log("Blocked internal tracking request from:", origin || referer);
+    return new Response(
+      JSON.stringify({ success: true, blocked: true, reason: "internal_access" }),
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+  
   // ... resto do processamento
 }
 ```
 
-### 2. Hook useFunnelMetrics: Aceitar Datas
+### 6. Edge Function `quiz-submit-email` - Validação de Origem
 
 ```typescript
-interface RefreshOptions {
-  startDate?: Date;
-  endDate?: Date;
+// Após as validações iniciais, antes de inserir lead:
+const origin = req.headers.get("origin") || "";
+const referer = req.headers.get("referer") || "";
+
+const BLOCKED_PATTERNS = [
+  /id-preview--.*\.lovable\.app/i,
+  /localhost/i,
+  /127\.0\.0\.1/i,
+  /\.lovable\.dev/i,
+];
+
+const isInternalRequest = BLOCKED_PATTERNS.some(pattern => 
+  pattern.test(origin) || pattern.test(referer)
+);
+
+if (isInternalRequest) {
+  console.log("Blocked internal lead submission from:", origin || referer);
+  return new Response(
+    JSON.stringify({ success: true, blocked: true, reason: "internal_access" }),
+    { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+  );
 }
-
-const refreshMetrics = useCallback(async (options?: RefreshOptions) => {
-  setIsLoading(true);
-  
-  try {
-    const supabase = await getSupabase();
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    // Build request body with optional date filters
-    const requestBody: Record<string, unknown> = { action: "stats" };
-    
-    if (options?.startDate) {
-      requestBody.startDate = options.startDate.toISOString();
-    }
-    if (options?.endDate) {
-      // Ajustar para fim do dia
-      const endOfDay = new Date(options.endDate);
-      endOfDay.setHours(23, 59, 59, 999);
-      requestBody.endDate = endOfDay.toISOString();
-    }
-    
-    const { data, error } = await supabase.functions.invoke("quiz-metrics", {
-      body: requestBody,
-      headers: session?.access_token ? {
-        Authorization: `Bearer ${session.access_token}`
-      } : undefined,
-    });
-    // ...
-  }
-}, []);
-```
-
-### 3. Admin.tsx: Integrar Calendário com Métricas do Funil
-
-Mover o `DateRangePicker` para dentro do Card de "Métricas do Funil" e fazer com que ele controle ambas as visualizações (funil e timeline):
-
-```tsx
-// Atualizar handleDateChange
-const handleDateChange = useCallback((start: Date | undefined, end: Date | undefined) => {
-  setDateRange({ startDate: start, endDate: end });
-  if (start && end) {
-    // Atualizar ambas as visualizações
-    refreshMetrics({ startDate: start, endDate: end });
-    fetchTimeline({ startDate: start, endDate: end });
-  }
-}, [refreshMetrics, fetchTimeline]);
-
-// No Card de Métricas do Funil
-<Card>
-  <CardHeader className="pb-2">
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <CardTitle className="text-lg">Métricas do Funil</CardTitle>
-      <div className="flex items-center gap-2">
-        <DateRangePicker
-          startDate={dateRange.startDate}
-          endDate={dateRange.endDate}
-          onDateChange={handleDateChange}
-        />
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => resetMetrics()}
-          className="text-destructive hover:text-destructive"
-        >
-          Resetar
-        </Button>
-      </div>
-    </div>
-  </CardHeader>
-  <CardContent>
-    <FunnelMetricsInline 
-      metrics={metrics}
-      getDropoffRate={getDropoffRate}
-      getConversionRate={getConversionRate}
-      flowCounts={stats?.flowCounts}
-    />
-  </CardContent>
-</Card>
-```
-
-### 4. Atualização Inicial com Datas
-
-```typescript
-// useEffect inicial - passar datas ao carregar
-useEffect(() => {
-  if (user && isAdmin) {
-    refreshMetrics({ startDate: dateRange.startDate, endDate: dateRange.endDate });
-    fetchStats();
-    fetchTimeline({ startDate: dateRange.startDate, endDate: dateRange.endDate });
-    fetchVisitors();
-  }
-}, [user, isAdmin, refreshMetrics, fetchStats, fetchTimeline, fetchVisitors, dateRange.startDate, dateRange.endDate]);
-
-// handleRefreshAll - incluir datas
-const handleRefreshAll = useCallback(() => {
-  setIsRefreshing(true);
-  Promise.all([
-    refreshMetrics({ startDate: dateRange.startDate, endDate: dateRange.endDate }),
-    fetchStats(),
-    fetchTimeline({ startDate: dateRange.startDate, endDate: dateRange.endDate }),
-    fetchVisitors(),
-  ]).finally(() => {
-    setTimeout(() => setIsRefreshing(false), 500);
-  });
-}, [refreshMetrics, fetchStats, fetchTimeline, fetchVisitors, dateRange]);
 ```
 
 ---
 
-## Fluxo de Dados
+## Fluxo de Proteção
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                    DateRangePicker                               │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌────────┐ │
-│  │ 7 dias  │  │ 14 dias │  │ 30 dias │  │ 60 dias │  │ 📅 ... │ │
-│  └─────────┘  └─────────┘  └─────────┘  └─────────┘  └────────┘ │
-└────────────────────────────────┬────────────────────────────────┘
-                                 │
-                                 ▼
-┌────────────────────────────────┴────────────────────────────────┐
-│                    handleDateChange()                            │
+│                    ACESSO AO FUNIL                               │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              CLIENTE: isInternalAccess()                         │
 │                                                                  │
-│   1. refreshMetrics({ startDate, endDate })  ──────────────────▶│
-│   2. fetchTimeline({ startDate, endDate })   ──────────────────▶│
-└──────────────────────────────────────────────────────────────────┘
-                                 │
-                 ┌───────────────┴───────────────┐
-                 ▼                               ▼
-┌────────────────────────────┐   ┌────────────────────────────┐
-│     quiz-metrics (stats)   │   │   quiz-leads (timeline)    │
-│    (Edge Function)         │   │    (Edge Function)         │
-│                            │   │                            │
-│  Filtra quiz_funnel_events │   │  Filtra por created_at     │
-│  por created_at            │   │                            │
-└────────────────────────────┘   └────────────────────────────┘
-                 │                               │
-                 ▼                               ▼
-┌────────────────────────────┐   ┌────────────────────────────┐
-│   FunnelMetricsInline      │   │   LeadsTimelineChart       │
-│                            │   │                            │
-│  • Visitantes por página   │   │  • Gráfico temporal        │
-│  • Conversões por etapa    │   │                            │
-│  • Drop-offs               │   │                            │
-│  • Gargalos                │   │                            │
-└────────────────────────────┘   └────────────────────────────┘
+│  Verifica:                                                       │
+│  • URL contém "id-preview--*.lovable.app"? → BLOQUEAR            │
+│  • Está em iframe com referrer lovable.dev? → BLOQUEAR           │
+│  • URL é localhost? → BLOQUEAR                                   │
+│  • URL é codigolupin.lovable.app? → PERMITIR                     │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┴───────────────────┐
+          ▼                                       ▼
+┌──────────────────┐                   ┌──────────────────┐
+│  INTERNO = true  │                   │  INTERNO = false │
+│                  │                   │                  │
+│  • Não rastrear  │                   │  • Enviar track  │
+│  • Não salvar    │                   │  • Salvar lead   │
+│    lead          │                   │  • Meta Pixel    │
+│  • Sem Meta Pixel│                   │                  │
+└──────────────────┘                   └────────┬─────────┘
+                                                │
+                                                ▼
+                              ┌─────────────────────────────────┐
+                              │     BACKEND: Edge Functions      │
+                              │                                  │
+                              │  Valida headers Origin/Referer   │
+                              │  • Padrão bloqueado → Rejeitar   │
+                              │  • Origem válida → Processar     │
+                              └─────────────────────────────────┘
 ```
 
 ---
 
-## Layout Visual Final
+## Resultado Esperado
 
-```text
-┌──────────────────────────────────────────────────────────────────────────┐
-│  Métricas do Funil                                                       │
-│  ┌────────────────────────────────────────────────────────────────────┐  │
-│  │  [7 dias] [14 dias] [30 dias] [60 dias]  [📅 01/02 - 05/02/2025]  │  │
-│  │                                                          [Resetar] │  │
-│  └────────────────────────────────────────────────────────────────────┘  │
-│                                                                          │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐    │
-│  │   Entradas   │ │Captura Email │ │Conversão Fin │ │ Maior Gargalo│    │
-│  │     1,234    │ │     45%      │ │     38%      │ │   Q3 → Q4    │    │
-│  │   890 únicos │ │              │ │  456 chegaram│ │   -25%       │    │
-│  └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘    │
-│                                                                          │
-│  Jornada Pré-Email                                                       │
-│  ┌──────┐ → ┌──────┐ → ┌──────┐ → ┌──────┐ → ┌──────┐ → ┌──────┐ → ... │
-│  │Início│   │  Q1  │   │  Q2  │   │  Q3  │   │  Q4  │   │  Q5  │       │
-│  │ 1234 │   │ 1100 │   │ 980  │   │ 850  │   │ 750  │   │ 680  │       │
-│  └──────┘   └──────┘   └──────┘   └──────┘   └──────┘   └──────┘       │
-│                                                                          │
-│  Captura de Email (Ponto Crítico)                                        │
-│  ┌────────────┐                                                          │
-│  │   Email    │  45% dos que chegaram na Q6                              │
-│  │    560     │                                                          │
-│  └────────────┘                                                          │
-│                                                                          │
-│  Jornada Pós-Email                                                       │
-│  ┌──────┐ → ┌──────┐ → ┌──────────┐                                     │
-│  │  Q7  │   │  Q8  │   │ Resultado │                                     │
-│  │ 520  │   │ 490  │   │    456    │                                     │
-│  └──────┘   └──────┘   └──────────┘                                     │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+| Cenário | PageView | Lead | Métricas |
+|---------|----------|------|----------|
+| Acesso via `id-preview--*.lovable.app` | ❌ | ❌ | ❌ |
+| Acesso via editor Lovable (iframe) | ❌ | ❌ | ❌ |
+| Acesso via localhost | ❌ | ❌ | ❌ |
+| Acesso via `codigolupin.lovable.app` | ✅ | ✅ | ✅ |
+| Acesso via link externo em aba anônima | ✅ | ✅ | ✅ |
+
+---
+
+## Validação Pós-Implementação
+
+1. **Teste Interno (Preview Lovable)**:
+   - Acessar funil via ambiente Lovable
+   - Verificar console para mensagem "Skipping internal access"
+   - Confirmar que métricas não aumentaram no admin
+
+2. **Teste Externo (Produção)**:
+   - Abrir aba anônima
+   - Acessar `codigolupin.lovable.app`
+   - Navegar pelo funil
+   - Verificar que métricas contabilizam normalmente
+
+3. **Verificar Edge Functions**:
+   - Logs devem mostrar "Blocked internal tracking request" para acessos internos
+   - Logs devem processar normalmente acessos de produção
 
 ---
 
 ## Garantias
 
-- Layout estrutural do funil 100% preservado
-- Performance mantida (filtro aplicado no banco de dados)
-- Compatível com desktop e mobile (DateRangePicker já é responsivo)
-- Consistência visual com o resto da dashboard
-- Filtro intuitivo com presets rápidos (7, 14, 30, 60 dias)
-- Atualização em tempo real ao selecionar período
-- Mesmo calendário já existente, apenas integrado ao funil
-
----
-
-## Fluxo de Uso
-
-1. Admin acessa o dashboard
-2. Por padrão, últimos 30 dias estão selecionados
-3. Admin pode:
-   - Clicar em preset rápido (7, 14, 30, 60 dias)
-   - Abrir calendário e selecionar intervalo específico
-   - Clicar em dia único para ver dados daquele dia
-4. Ao selecionar, métricas do funil e timeline atualizam simultaneamente
-5. Todos os números refletem exatamente o período selecionado
+- Fluxo visual do funil 100% preservado
+- Funcionalidades mantidas em todos os ambientes
+- Apenas tracking é bloqueado em ambiente interno
+- Performance não afetada (verificação é síncrona e leve)
+- Meta Pixel não dispara em ambiente interno
+- Dados do admin dashboard refletem apenas tráfego real
 
