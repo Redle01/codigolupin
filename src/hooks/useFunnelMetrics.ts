@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { isInternalAccess } from "@/lib/environment";
 
 // Lazy load Supabase only when needed (saves ~30KB from initial bundle)
 const getSupabase = async () => {
@@ -95,6 +96,12 @@ export function useFunnelMetrics() {
 
   // Track page view via Edge Function - deferred to idle time
   const trackPageView = useCallback((page: keyof FunnelMetrics["pageViews"]) => {
+    // Não rastrear acessos internos (Lovable preview/admin)
+    if (isInternalAccess()) {
+      console.debug("[Metrics] Skipping internal access tracking");
+      return;
+    }
+    
     const visitorId = getOrCreateVisitorId();
     
     // Defer tracking to idle time - never blocks UI

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { quizQuestions, quizResults, ResultType, quizConfig } from "@/lib/quizConfig";
 import { getOrCreateVisitorId } from "./useFunnelMetrics";
 import { useMetaPixel } from "./useMetaPixel";
+import { isInternalAccess } from "@/lib/environment";
 
 // Lazy load Supabase only when needed (saves ~30KB from initial bundle)
 const getSupabase = async () => {
@@ -144,6 +145,12 @@ export function useQuiz() {
   const submitEmail = useCallback(async () => {
     if (!state.email) return false;
     
+    // Não salvar leads em ambiente interno - simular sucesso para continuar fluxo
+    if (isInternalAccess()) {
+      console.debug("[Quiz] Skipping email submission in internal environment");
+      return true;
+    }
+    
     setState((prev) => ({ ...prev, isSubmitting: true }));
     
     try {
@@ -174,9 +181,15 @@ export function useQuiz() {
     }
   }, [state.email, state.answers, state.offerFlow]);
 
-  // Update result type after quiz completion
+  // Update result type after quiz completion (skip in internal environments)
   const updateResultType = useCallback(async () => {
     if (!state.email || !state.result) return;
+    
+    // Não atualizar leads em ambiente interno
+    if (isInternalAccess()) {
+      console.debug("[Quiz] Skipping result type update in internal environment");
+      return;
+    }
     
     try {
       const visitorId = getOrCreateVisitorId();
