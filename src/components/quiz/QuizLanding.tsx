@@ -1,5 +1,5 @@
 import { LazyMotion, domAnimation, m } from "framer-motion";
-import { Sparkles, Users } from "lucide-react";
+import { ArrowRight, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface QuizLandingProps {
@@ -56,10 +56,10 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             <Button
               onClick={onStart}
               size="lg"
-              className="bg-gradient-gold text-primary-foreground font-bold text-[15px] md:text-lg px-5 md:px-10 py-5 md:py-6 rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-105 w-full max-w-[320px] md:w-auto md:max-w-none"
+              className="bg-gradient-gold text-primary-foreground font-bold text-[15px] md:text-lg px-5 md:px-10 py-5 md:py-6 rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-105 w-full max-w-[320px] md:w-auto md:max-w-none group"
             >
-              <Sparkles className="w-5 h-5 md:w-5 md:h-5 mr-2" />
               DESCOBRIR MEU BLOQUEIO AGORA
+              <ArrowRight className="w-5 h-5 md:w-5 md:h-5 ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
           </m.div>
 

@@ -39,6 +39,19 @@ export function useMetaPixel() {
     }
   }, []);
 
+  // InitiateCheckout - disparar ao clicar no CTA do resultado
+  const trackInitiateCheckout = useCallback((data?: {
+    result_type?: string;
+    offer_flow?: number;
+  }) => {
+    if (typeof window !== "undefined" && window.fbq) {
+      window.fbq("track", "InitiateCheckout", {
+        content_name: data?.result_type,
+        content_category: `flow_${data?.offer_flow}`,
+      });
+    }
+  }, []);
+
   // Associar visitor_id ao pixel para tracking avançado
   const setExternalId = useCallback((visitorId: string) => {
     if (typeof window !== "undefined" && window.fbq) {
@@ -69,6 +82,7 @@ export function useMetaPixel() {
   return {
     trackPageView,
     trackChegouCheckout,
+    trackInitiateCheckout,
     setExternalId,
     initWithUser,
   };
