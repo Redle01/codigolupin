@@ -145,7 +145,7 @@ export const quizResults: Record<ResultType, ResultData> = {
     result: "Você é o clássico 'Gentleman Invisível' - um homem de valor excepcional que mulheres respeitam profundamente, mas que não desperta o fogo da paixão que elas sentem secretamente por outros homens.",
     potential: "Transformar sua elegância natural em magnetismo sexual irresistível. Você já tem 80% do que precisa - falta apenas despertar a aura de mistério e perigo controlado que faz mulheres fantasiarem sobre você.",
     nextStep: "O Código de Arsène Lupin foi criado especificamente para homens como você. Através da Técnica da Elegância Perigosa, você manterá toda sua sofisticação mas adicionará o elemento de imprevisibilidade que transforma 'respeito' em 'obsessão romântica'.",
-    ctaText: "DESPERTAR MEU MAGNETISMO AGORA",
+    ctaText: "SIM, QUERO DESPERTAR MEU MAGNETISMO",
   },
   estrategista: {
     type: "estrategista",
@@ -155,7 +155,7 @@ export const quizResults: Record<ResultType, ResultData> = {
     result: "Você é o 'Estrategista Paralisado' - possui inteligência superior e entende teoricamente sedução, mas seu próprio intelecto virou sua prisão. Você analisa demais e quando chega a hora H, trava.",
     potential: "Transformar seu intelecto de obstáculo em arma de sedução letal. Sua capacidade analítica pode se tornar seu maior trunfo para criar mistério e tensão sexual calculada.",
     nextStep: "O Código de Arsène Lupin vai te ensinar as 12 Técnicas de Conversação Hipnótica que transformam pensamentos demais em charme irresistível. Você aprenderá a canalizar sua inteligência para criar fascinação ao invés de análise paralela.",
-    ctaText: "TRANSFORMAR ANÁLISE EM ATRAÇÃO",
+    ctaText: "SIM, QUERO TRANSFORMAR ANÁLISE EM ATRAÇÃO",
   },
   diamante: {
     type: "diamante",
@@ -165,7 +165,7 @@ export const quizResults: Record<ResultType, ResultData> = {
     result: "Você é o 'Diamante Bruto' - possui carisma natural e já teve sucessos, mas falta consistência e sofisticação para atrair mulheres de alto valor. Às vezes funciona, às vezes não.",
     potential: "Sistematizar seu sucesso natural e elevar seu nível para conquistar as mulheres mais sofisticadas e desejadas. Você tem o raw material - precisa apenas do refinamento aristocrático.",
     nextStep: "O Código de Arsène Lupin vai polir seu diamante através do Protocolo de Conquista Parisiense. Você aprenderá a escalar elegantemente e manter o mistério que transforma atração em obsessão.",
-    ctaText: "REFINAR MEU DIAMANTE AGORA",
+    ctaText: "SIM, QUERO REFINAR MEU DIAMANTE",
   },
   guerreiro: {
     type: "guerreiro",
@@ -175,6 +175,6 @@ export const quizResults: Record<ResultType, ResultData> = {
     result: "Você é o 'Guerreiro Ferido' - já foi confiante romanticamente, mas experiências dolorosas (traição, rejeição humilhante) abalaram sua autoestima masculina. Agora se protege através do isolamento.",
     potential: "Reconstruir sua confiança e se tornar mais poderoso do que jamais foi. Suas feridas podem se transformar em força magnética se você souber como canalizar essa experiência.",
     nextStep: "O Código de Arsène Lupin vai reconstruir sua confiança através da Metamorfose do Gentleman Ladrão. Você não apenas recuperará sua confiança anterior - se tornará blindado contra rejeição.",
-    ctaText: "RECONSTRUIR MINHA CONFIANÇA",
+    ctaText: "SIM, QUERO RECONSTRUIR MINHA CONFIANÇA",
   },
 };
