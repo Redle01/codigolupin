@@ -1,13 +1,11 @@
 
-# Plano: Ajustes Visuais, Meta Pixel e Mockup no Resultado
+# Plano: Atualização de Garantia e CTAs
 
-## Resumo das Alterações
+## Resumo
 
-1. **Remover numeração** das perguntas (manter apenas barra de progresso)
-2. **Substituir ícone Sparkles** por seta (ArrowRight) no CTA da landing
-3. **Adicionar evento InitiateCheckout** no Meta Pixel ao clicar no CTA do resultado
-4. **Melhorar responsividade** do texto dos CTAs no mobile
-5. **Adicionar mockup** nas páginas de resultado (acima do CTA)
+Duas alterações pontuais:
+1. Atualizar "7 dias" → "30 dias" na garantia
+2. Otimizar os 4 CTAs das páginas de resultado com linguagem de decisão ativa
 
 ---
 
@@ -15,229 +13,86 @@
 
 | Arquivo | Alteração |
 |---------|-----------|
-| `src/components/quiz/QuizQuestion.tsx` | Remover numeração "X/Y" |
-| `src/components/quiz/QuizLanding.tsx` | Trocar Sparkles por ArrowRight |
-| `src/hooks/useMetaPixel.ts` | Adicionar função `trackInitiateCheckout` |
-| `src/components/quiz/QuizResult.tsx` | Disparar InitiateCheckout + adicionar mockup + melhorar responsividade CTA |
-| `public/images/mockup-checkout.png` | **NOVO** - Copiar imagem do mockup |
+| `src/components/quiz/QuizResult.tsx` | Atualizar "7 dias" → "30 dias" |
+| `src/lib/quizConfig.ts` | Atualizar 4 textos de CTA |
 
 ---
 
 ## Detalhes de Implementação
 
-### 1. Remover Numeração do Quiz (`QuizQuestion.tsx`)
+### 1. Atualização da Garantia (`QuizResult.tsx`)
 
-**Linha 51-53 - Remover:**
+**Linha 180 - De:**
 ```tsx
-<span className="text-sm md:text-sm text-muted-foreground">
-  {questionNumber}/{totalQuestions}
-</span>
-```
-
-A barra de progresso visual permanece intacta (linhas 57-71).
-
-### 2. Substituir Ícone no CTA da Landing (`QuizLanding.tsx`)
-
-**Alterações:**
-- Remover import de `Sparkles`
-- Adicionar import de `ArrowRight`
-- Trocar ícone no botão (mover para a direita do texto)
-
-**De:**
-```tsx
-import { Sparkles, Users } from "lucide-react";
-// ...
-<Sparkles className="w-5 h-5 md:w-5 md:h-5 mr-2" />
-DESCOBRIR MEU BLOQUEIO AGORA
+🔒 Acesso imediato após confirmação • Garantia de 7 dias
 ```
 
 **Para:**
 ```tsx
-import { ArrowRight, Users } from "lucide-react";
-// ...
-DESCOBRIR MEU BLOQUEIO AGORA
-<ArrowRight className="w-5 h-5 md:w-5 md:h-5 ml-2" />
-```
-
-### 3. Adicionar Evento InitiateCheckout (`useMetaPixel.ts`)
-
-**Adicionar nova função:**
-```typescript
-// InitiateCheckout - disparar ao clicar no CTA do resultado
-const trackInitiateCheckout = useCallback((data?: {
-  result_type?: string;
-  offer_flow?: number;
-}) => {
-  if (typeof window !== "undefined" && window.fbq) {
-    window.fbq("track", "InitiateCheckout", {
-      content_name: data?.result_type,
-      content_category: `flow_${data?.offer_flow}`,
-    });
-  }
-}, []);
-```
-
-**Exportar a função:**
-```typescript
-return {
-  trackPageView,
-  trackChegouCheckout,
-  trackInitiateCheckout,  // NOVO
-  setExternalId,
-  initWithUser,
-};
-```
-
-### 4. Atualizar QuizResult (`QuizResult.tsx`)
-
-#### 4.1 Disparar InitiateCheckout no Clique
-
-**Adicionar import do hook e chamar no onClick:**
-```tsx
-import { useMetaPixel } from "@/hooks/useMetaPixel";
-
-// Dentro do componente:
-const { trackInitiateCheckout } = useMetaPixel();
-
-// Handler para o CTA:
-const handleCheckoutClick = () => {
-  // Disparar InitiateCheckout antes do redirect
-  trackInitiateCheckout({
-    result_type: result.type,
-    offer_flow: flow,
-  });
-  // Chamar função original de checkout
-  onCheckout();
-};
-```
-
-#### 4.2 Adicionar Mockup
-
-**Copiar imagem para o projeto:**
-- De: `user-uploads://Mockup_checkout.png`
-- Para: `public/images/mockup-checkout.png`
-
-**Adicionar seção do mockup (após Oferta Especial, antes do CTA):**
-```tsx
-{/* Mockup */}
-<m.div
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ delay: 0.85, duration: 0.6 }}
-  className="w-full mb-5 md:mb-8"
->
-  <img
-    src="/images/mockup-checkout.png"
-    alt="O que você vai receber"
-    className="w-full max-w-md mx-auto h-auto object-contain"
-    loading="lazy"
-  />
-</m.div>
-```
-
-#### 4.3 Melhorar Responsividade do CTA
-
-**Ajustar classes do botão para melhor exibição mobile:**
-
-**De:**
-```tsx
-className="w-full h-14 md:h-16 bg-gradient-gold text-primary-foreground font-bold text-base md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02] group"
-```
-
-**Para:**
-```tsx
-className="w-full h-auto min-h-[3.5rem] md:min-h-[4rem] py-3 md:py-4 px-4 md:px-6 bg-gradient-gold text-primary-foreground font-bold text-sm sm:text-base md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02] group leading-tight"
-```
-
-- `h-auto` + `min-h-[3.5rem]` permite altura flexível
-- `py-3 md:py-4` adiciona padding vertical adequado
-- `text-sm sm:text-base md:text-lg` escala progressiva do texto
-- `leading-tight` evita espaçamento excessivo entre linhas
-- `px-4 md:px-6` mantém padding horizontal adequado
-
----
-
-## Estrutura Final da Página de Resultado
-
-```text
-┌─────────────────────────────────────┐
-│         [Ícone do Perfil]          │
-│                                     │
-│     Seu Tipo de Magnetismo          │
-│     [TÍTULO DO RESULTADO]           │
-│     X% dos homens...                │
-├─────────────────────────────────────┤
-│  📋 Seu Resultado                   │
-│  [Descrição...]                     │
-├─────────────────────────────────────┤
-│  ✨ Seu Maior Potencial             │
-│  [Descrição...]                     │
-├─────────────────────────────────────┤
-│  🎯 Próximo Passo                   │
-│  [Descrição...]                     │
-├─────────────────────────────────────┤
-│  🔥 OFERTA ESPECIAL: 12x R$ 10,03   │
-│  Bônus Inclusos:                    │
-│  🎁 [Bônus 1]                       │
-│  🎁 [Bônus 2]                       │
-├─────────────────────────────────────┤
-│         [MOCKUP IMAGE]              │  ← NOVO
-│   (responsivo, max-w-md, centered)  │
-├─────────────────────────────────────┤
-│  ┌─────────────────────────────┐    │
-│  │  [CTA RESPONSIVO] →         │    │  ← Dispara InitiateCheckout
-│  └─────────────────────────────┘    │
-│  🔒 Acesso imediato • Garantia 7d   │
-└─────────────────────────────────────┘
+🔒 Acesso imediato após confirmação • Garantia de 30 dias
 ```
 
 ---
 
-## Fluxo de Eventos Meta Pixel
+### 2. CTAs Otimizados (`quizConfig.ts`)
 
-```text
-[Usuário navega pelo funil]
-        │
-        ▼
-   PageView (cada página)
-        │
-        ▼
-[Chega na página de resultado]
-        │
-        ▼
-   PageView (resultado)
-        │
-        ▼
-[Clica no CTA do resultado]
-        │
-        ├─► InitiateCheckout (NOVO)
-        │
-        ├─► ChegouNoCheckout (existente)
-        │
-        ▼
-   [Redirect para Ticto]
+Cada CTA será adaptado ao contexto emocional do perfil, com palavra de ação/comprometimento:
+
+| Perfil | CTA Atual | Novo CTA |
+|--------|-----------|----------|
+| **Gentleman Invisível** | "DESPERTAR MEU MAGNETISMO AGORA" | "SIM, QUERO DESPERTAR MEU MAGNETISMO" |
+| **Estrategista Paralisado** | "TRANSFORMAR ANÁLISE EM ATRAÇÃO" | "SIM, QUERO TRANSFORMAR ANÁLISE EM ATRAÇÃO" |
+| **Diamante Bruto** | "REFINAR MEU DIAMANTE AGORA" | "SIM, QUERO REFINAR MEU DIAMANTE" |
+| **Guerreiro Ferido** | "RECONSTRUIR MINHA CONFIANÇA" | "SIM, QUERO RECONSTRUIR MINHA CONFIANÇA" |
+
+**Lógica de otimização:**
+- Prefixo "SIM, QUERO" → Transforma clique passivo em decisão consciente
+- Mantém a essência emocional de cada perfil
+- Linguagem de primeira pessoa → Usuário assume ownership da decisão
+- Removido "AGORA" para evitar redundância (seta → já indica ação imediata)
+
+---
+
+## Alterações no Código
+
+### `src/lib/quizConfig.ts` (Linhas 148, 158, 168, 178)
+
+```typescript
+// Linha 148 - Gentleman
+ctaText: "SIM, QUERO DESPERTAR MEU MAGNETISMO",
+
+// Linha 158 - Estrategista  
+ctaText: "SIM, QUERO TRANSFORMAR ANÁLISE EM ATRAÇÃO",
+
+// Linha 168 - Diamante
+ctaText: "SIM, QUERO REFINAR MEU DIAMANTE",
+
+// Linha 178 - Guerreiro
+ctaText: "SIM, QUERO RECONSTRUIR MINHA CONFIANÇA",
+```
+
+### `src/components/quiz/QuizResult.tsx` (Linha 180)
+
+```tsx
+🔒 Acesso imediato após confirmação • Garantia de 30 dias
 ```
 
 ---
 
 ## O Que NÃO Será Alterado
 
-- ✅ Copy (nenhuma palavra)
 - ✅ Estrutura do funil
-- ✅ Ordem das páginas
-- ✅ Lógica condicional existente
-- ✅ Design geral, cores ou tipografia
-- ✅ Performance (mockup com lazy loading)
-- ✅ Barra de progresso (mantida intacta)
-- ✅ Eventos existentes do Meta Pixel
+- ✅ Copy fora dos CTAs
+- ✅ Valores, ofertas ou condições
+- ✅ Eventos, integrações ou lógica condicional
+- ✅ Design, tipografia ou responsividade
+- ✅ Performance e velocidade do funil
 
 ---
 
-## Garantias
+## Resultado Esperado
 
-- Numeração removida, barra de progresso preservada
-- Ícone de seta discreto no CTA da landing
-- InitiateCheckout disparado corretamente no clique do resultado
-- CTAs responsivos sem quebra estranha de linha
-- Mockup visualmente integrado e 100% responsivo
-- Não altera nenhum texto/copy existente
+- Garantia clara de **30 dias** em todo o funil
+- CTAs com linguagem de **decisão ativa** ("SIM, QUERO...")
+- Aumento de intenção de clique sem impacto na experiência
+- Consistência total entre os 4 perfis de resultado
