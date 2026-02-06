@@ -1,6 +1,6 @@
 import { useState, memo } from "react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
-import { Lock, Gift, Mail, Loader2 } from "lucide-react";
+import { Lock, Mail, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -69,59 +69,14 @@ export const EmailCapture = memo(function EmailCapture({
 
           {/* Title */}
           <h2 className="font-serif-display text-2xl md:text-3xl font-bold text-center mb-4 md:mb-4">
-            <span className="text-gradient-gold">Salve Seus Resultados</span>
+            <span className="text-gradient-gold">RECEBA SEU DIAGNÓSTICO</span>
             <br />
-            <span className="text-foreground">Personalizados</span>
+            <span className="text-foreground">+ ACESSO EXCLUSIVO</span>
           </h2>
 
           <p className="text-center text-muted-foreground mb-5 md:mb-8 text-base md:text-base leading-relaxed px-2">
-            Você está a apenas 2 perguntas de descobrir seu tipo exato de magnetismo 
-            masculino e receber seu plano personalizado de transformação.
+            Descubra seu perfil e ganhe acesso exclusivo ao método que transformou homens em ímãs de atração feminina
           </p>
-
-          {/* Benefits */}
-          <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl md:rounded-2xl p-5 md:p-6 mb-5 md:mb-8">
-            <p className="text-sm md:text-sm text-muted-foreground mb-4 md:mb-4">
-              Para garantir que você receba:
-            </p>
-            <ul className="space-y-3 md:space-y-3">
-              {[
-                { text: "Sua análise completa e personalizada" },
-                { text: "Plano específico de transformação para seu tipo" },
-                { 
-                  text: "Bônus exclusivo: \"25 Frases de Impacto que Desarmam Qualquer Mulher\"",
-                  value: "R$67"
-                },
-                { 
-                  text: "Bônus exclusivo: \"Dominando o Carnaval 2026\"",
-                  value: "R$97",
-                  suffix: "— Liberado por tempo limitado"
-                },
-              ].map((benefit, index) => (
-                <m.li
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + index * 0.1 }}
-                  className="flex items-start gap-3 md:gap-3"
-                >
-                  <span className="text-primary font-bold text-base md:text-base">✓</span>
-                  <span className="text-foreground text-sm md:text-sm leading-relaxed">
-                    {benefit.text}
-                    {benefit.value && (
-                      <>
-                        {" "}
-                        <span className="line-through text-muted-foreground/70 decoration-primary/50 decoration-2">
-                          ({benefit.value})
-                        </span>
-                      </>
-                    )}
-                    {benefit.suffix && ` ${benefit.suffix}`}
-                  </span>
-                </m.li>
-              ))}
-            </ul>
-          </div>
 
           {/* Email form */}
           <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
@@ -161,8 +116,8 @@ export const EmailCapture = memo(function EmailCapture({
                 </>
               ) : (
                 <>
-                  <Gift className="w-5 h-5 md:w-5 md:h-5 mr-2" />
-                  SALVAR MEUS RESULTADOS
+                  <Sparkles className="w-5 h-5 md:w-5 md:h-5 mr-2" />
+                  DESCOBRIR MEU PERFIL AGORA
                 </>
               )}
             </Button>

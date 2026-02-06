@@ -31,10 +31,9 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             transition={{ delay: 0.15, duration: 0.5 }}
             className="text-[22px] md:text-3xl lg:text-4xl font-bold mb-4 md:mb-5 leading-snug md:leading-tight px-2 md:px-0"
           >
-            <span className="text-foreground">Por Que Mulheres Te Veem Apenas Como </span>
+            <span className="text-foreground">Por Que Algumas Mulheres Te Veem Apenas Como </span>
             <span className="text-gradient-gold">"Amigo"</span>
-            <br />
-            <span className="text-foreground text-lg md:text-2xl lg:text-3xl">(Mesmo Você Sendo Um Bom Partido)?</span>
+            <span className="text-foreground">?</span>
           </m.h1>
 
           {/* Subheadline */}
@@ -44,9 +43,8 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="text-[15px] md:text-base lg:text-lg text-muted-foreground mb-8 md:mb-10 max-w-xl mx-auto leading-relaxed px-1 md:px-0"
           >
-            Descubra o <span className="text-primary font-semibold">ÚNICO erro</span> que está sabotando suas chances 
-            com mulheres de qualidade e como se transformar no homem mais desejado do{" "}
-            <span className="text-primary font-medium">Carnaval 2026</span>
+            Descubra o <span className="text-primary font-semibold">ÚNICO bloqueio</span> que está sabotando suas chances 
+            com mulheres de qualidade e como despertar o magnetismo que elas não conseguem resistir
           </m.p>
 
           {/* CTA Button */}
@@ -61,18 +59,18 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
               className="bg-gradient-gold text-primary-foreground font-bold text-[15px] md:text-lg px-5 md:px-10 py-5 md:py-6 rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-105 w-full max-w-[320px] md:w-auto md:max-w-none"
             >
               <Sparkles className="w-5 h-5 md:w-5 md:h-5 mr-2" />
-              DESCOBRIR MEU ERRO FATAL AGORA
+              DESCOBRIR MEU BLOQUEIO AGORA
             </Button>
           </m.div>
 
-          {/* Subtitle below CTA */}
+          {/* Value Proposition below CTA */}
           <m.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.5 }}
             className="text-[13px] md:text-sm text-muted-foreground mt-5 md:mt-5 italic px-4 md:px-0"
           >
-            "Apenas 2 minutos podem mudar sua vida romântica para sempre"
+            "Em menos de 2 minutos, você descobrirá exatamente por que mulheres sofisticadas te colocam na friendzone e qual é seu tipo específico de magnetismo masculino adormecido."
           </m.p>
 
           {/* Social proof */}
@@ -87,7 +85,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
               <span className="text-primary font-semibold">
                 {totalParticipants.toLocaleString("pt-BR")}
               </span>{" "}
-              homens já descobriram seu erro
+              homens já descobriram seu bloqueio
             </span>
           </m.div>
         </m.div>

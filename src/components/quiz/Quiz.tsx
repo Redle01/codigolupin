@@ -201,6 +201,7 @@ export function Quiz() {
           <QuizResult
             result={results[state.result]}
             onCheckout={handleCheckout}
+            offerFlow={state.offerFlow}
           />
         )}
       </Suspense>
