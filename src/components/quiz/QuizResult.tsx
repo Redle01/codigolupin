@@ -177,7 +177,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             </Button>
             
             <p className="text-xs md:text-xs text-muted-foreground text-center mt-4 md:mt-4">
-              🔒 Acesso imediato após confirmação • Garantia de 7 dias
+              🔒 Acesso imediato após confirmação • Garantia de 30 dias
             </p>
           </m.div>
         </div>
