@@ -1,328 +1,243 @@
 
+# Plano: Ajustes Visuais, Meta Pixel e Mockup no Resultado
 
-# Plano: Atualização Completa da Copy do Funil
+## Resumo das Alterações
 
-## Resumo
-
-Substituir 100% do conteúdo textual do funil pela nova copy fornecida, mantendo estrutura visual, layout, cores, fontes e lógica de navegação intactos.
+1. **Remover numeração** das perguntas (manter apenas barra de progresso)
+2. **Substituir ícone Sparkles** por seta (ArrowRight) no CTA da landing
+3. **Adicionar evento InitiateCheckout** no Meta Pixel ao clicar no CTA do resultado
+4. **Melhorar responsividade** do texto dos CTAs no mobile
+5. **Adicionar mockup** nas páginas de resultado (acima do CTA)
 
 ---
 
 ## Arquivos a Modificar
 
-| Arquivo | Tipo de Alteração |
-|---------|-------------------|
-| `src/lib/quizConfig.ts` | Atualizar perguntas, resultados e adicionar dados de bônus |
-| `src/components/quiz/QuizLanding.tsx` | Atualizar headline, subtítulo, CTA e value proposition |
-| `src/components/quiz/EmailCapture.tsx` | Atualizar título, descrição, benefícios e CTA |
-| `src/components/quiz/QuizResult.tsx` | Adicionar seção de oferta e bônus com lógica condicional |
-| `src/components/quiz/Quiz.tsx` | Passar `offerFlow` para QuizResult |
+| Arquivo | Alteração |
+|---------|-----------|
+| `src/components/quiz/QuizQuestion.tsx` | Remover numeração "X/Y" |
+| `src/components/quiz/QuizLanding.tsx` | Trocar Sparkles por ArrowRight |
+| `src/hooks/useMetaPixel.ts` | Adicionar função `trackInitiateCheckout` |
+| `src/components/quiz/QuizResult.tsx` | Disparar InitiateCheckout + adicionar mockup + melhorar responsividade CTA |
+| `public/images/mockup-checkout.png` | **NOVO** - Copiar imagem do mockup |
 
 ---
 
 ## Detalhes de Implementação
 
-### 1. Atualização do `quizConfig.ts`
+### 1. Remover Numeração do Quiz (`QuizQuestion.tsx`)
 
-#### Perguntas Atualizadas (8 perguntas)
+**Linha 51-53 - Remover:**
+```tsx
+<span className="text-sm md:text-sm text-muted-foreground">
+  {questionNumber}/{totalQuestions}
+</span>
+```
 
-| # | Nova Pergunta |
-|---|---------------|
-| 1 | "Qual dessas situações te deixa mais frustrado com mulheres?" |
-| 2 | "Qual frase você já ouviu demais de mulheres?" |
-| 3 | "O que mais te incomoda em festas e eventos?" |
-| 4 | "Se pudesse ter uma transformação completa, qual seria sua maior conquista?" |
-| 5 | "Como você se vê hoje em termos de sucesso com mulheres?" |
-| 6 | "Onde você se sente mais confiante atualmente?" |
-| 7 | "Para resolver definitivamente sua vida romântica, quanto você investiria?" |
-| 8 | "Se tivesse acesso hoje a um método comprovado, quando começaria?" |
+A barra de progresso visual permanece intacta (linhas 57-71).
 
-#### Resultados Atualizados (4 perfis)
+### 2. Substituir Ícone no CTA da Landing (`QuizLanding.tsx`)
 
-**Gentleman → "O Gentleman Invisível" (40%)**
-- Subtítulo: "40%"
-- Novo diagnóstico, potencial e próximo passo conforme copy
-- CTA: "DESPERTAR MEU MAGNETISMO AGORA"
+**Alterações:**
+- Remover import de `Sparkles`
+- Adicionar import de `ArrowRight`
+- Trocar ícone no botão (mover para a direita do texto)
 
-**Estrategista → "O Estrategista Paralisado" (30%)**
-- Subtítulo atualizado
-- CTA: "TRANSFORMAR ANÁLISE EM ATRAÇÃO"
+**De:**
+```tsx
+import { Sparkles, Users } from "lucide-react";
+// ...
+<Sparkles className="w-5 h-5 md:w-5 md:h-5 mr-2" />
+DESCOBRIR MEU BLOQUEIO AGORA
+```
 
-**Diamante → "O Diamante Bruto" (20%)**
-- Subtítulo atualizado
-- CTA: "REFINAR MEU DIAMANTE AGORA"
+**Para:**
+```tsx
+import { ArrowRight, Users } from "lucide-react";
+// ...
+DESCOBRIR MEU BLOQUEIO AGORA
+<ArrowRight className="w-5 h-5 md:w-5 md:h-5 ml-2" />
+```
 
-**Guerreiro → "O Guerreiro Ferido" (10%)**
-- Subtítulo atualizado
-- CTA: "RECONSTRUIR MINHA CONFIANÇA"
+### 3. Adicionar Evento InitiateCheckout (`useMetaPixel.ts`)
 
-#### Nova Estrutura de Dados para Bônus
-
+**Adicionar nova função:**
 ```typescript
-export interface ResultData {
-  type: ResultType;
-  title: string;
-  subtitle: string;
-  percentage: string;
-  // Renomear campos para refletir nova estrutura:
-  result: string;        // "Seu Resultado"
-  potential: string;     // "Seu Maior Potencial"
-  nextStep: string;      // "Próximo Passo"
-  ctaText: string;
-}
+// InitiateCheckout - disparar ao clicar no CTA do resultado
+const trackInitiateCheckout = useCallback((data?: {
+  result_type?: string;
+  offer_flow?: number;
+}) => {
+  if (typeof window !== "undefined" && window.fbq) {
+    window.fbq("track", "InitiateCheckout", {
+      content_name: data?.result_type,
+      content_category: `flow_${data?.offer_flow}`,
+    });
+  }
+}, []);
+```
 
-// Configuração de bônus (separada por fluxo)
-export const bonusConfig = {
-  flow1: {
-    primary: '🎁 "12 Técnicas de Conversação que Hipnotizam Mulheres"',
-    secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher" (Valor: R$ 67)',
-  },
-  flow2: {
-    primary: '🎁 "As Confissões de Arsène Lupin" (Valor: R$ 97)',
-    secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher" (Valor: R$ 67)',
-  },
-  pricing: "🔥 OFERTA ESPECIAL para seu perfil: 12x de R$ 10,03",
+**Exportar a função:**
+```typescript
+return {
+  trackPageView,
+  trackChegouCheckout,
+  trackInitiateCheckout,  // NOVO
+  setExternalId,
+  initWithUser,
 };
 ```
 
-### 2. Atualização do `QuizLanding.tsx`
+### 4. Atualizar QuizResult (`QuizResult.tsx`)
 
-| Elemento | Conteúdo Atual | Novo Conteúdo |
-|----------|----------------|---------------|
-| Headline | "Por Que Mulheres Te Veem Apenas Como 'Amigo' (Mesmo Você Sendo Um Bom Partido)?" | "Por Que Algumas Mulheres Te Veem Apenas Como 'Amigo'?" |
-| Subtítulo | Descubra o ÚNICO erro... Carnaval 2026 | "Descubra o ÚNICO bloqueio que está sabotando suas chances com mulheres de qualidade e como despertar o magnetismo que elas não conseguem resistir" |
-| Value Prop (abaixo CTA) | "Apenas 2 minutos podem mudar..." | "Em menos de 2 minutos, você descobrirá exatamente por que mulheres sofisticadas te colocam na friendzone e qual é seu tipo específico de magnetismo masculino adormecido." |
-| CTA | "DESCOBRIR MEU ERRO FATAL AGORA" | "DESCOBRIR MEU BLOQUEIO AGORA" |
-| Social Proof | "X homens já descobriram seu erro" | Manter estrutura, ajustar texto se necessário |
+#### 4.1 Disparar InitiateCheckout no Clique
 
-### 3. Atualização do `EmailCapture.tsx`
-
-| Elemento | Novo Conteúdo |
-|----------|---------------|
-| Título | "RECEBA SEU DIAGNÓSTICO + ACESSO EXCLUSIVO" |
-| Value Proposition | "Descubra seu perfil e ganhe acesso exclusivo ao método que transformou homens em ímãs de atração feminina" |
-| Placeholder | "Seu melhor email aqui..." (manter) |
-| CTA | "DESCOBRIR MEU PERFIL AGORA" |
-| Segurança | 🔒 "Seus dados estão seguros. Nunca compartilhamos seu email." (manter) |
-
-**Lista de benefícios será simplificada** (remover bônus específicos desta tela, pois serão exibidos na página de resultado)
-
-### 4. Atualização do `QuizResult.tsx`
-
-Adicionar nova seção de **Oferta Especial** e **Bônus** com lógica condicional:
-
+**Adicionar import do hook e chamar no onClick:**
 ```tsx
-interface QuizResultProps {
-  result: ResultData;
-  onCheckout: () => void;
-  offerFlow: 1 | 2 | null;  // ADICIONAR
-}
+import { useMetaPixel } from "@/hooks/useMetaPixel";
 
-// Dentro do componente, após a seção de "Próximo Passo":
-{/* Offer Section */}
-<m.div className="...">
-  <p className="text-primary font-bold">
-    🔥 OFERTA ESPECIAL para seu perfil: 12x de R$ 10,03
-  </p>
-  
-  <p className="text-muted-foreground mt-3">Bônus Inclusos:</p>
-  <ul className="mt-2 space-y-2">
-    <li>
-      {offerFlow === 1 
-        ? '🎁 "12 Técnicas de Conversação que Hipnotizam Mulheres"'
-        : '🎁 "As Confissões de Arsène Lupin" (Valor: R$ 97)'
-      }
-    </li>
-    <li>
-      🎁 "25 Frases que Desarmam Qualquer Mulher" (Valor: R$ 67)
-    </li>
-  </ul>
+// Dentro do componente:
+const { trackInitiateCheckout } = useMetaPixel();
+
+// Handler para o CTA:
+const handleCheckoutClick = () => {
+  // Disparar InitiateCheckout antes do redirect
+  trackInitiateCheckout({
+    result_type: result.type,
+    offer_flow: flow,
+  });
+  // Chamar função original de checkout
+  onCheckout();
+};
+```
+
+#### 4.2 Adicionar Mockup
+
+**Copiar imagem para o projeto:**
+- De: `user-uploads://Mockup_checkout.png`
+- Para: `public/images/mockup-checkout.png`
+
+**Adicionar seção do mockup (após Oferta Especial, antes do CTA):**
+```tsx
+{/* Mockup */}
+<m.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.85, duration: 0.6 }}
+  className="w-full mb-5 md:mb-8"
+>
+  <img
+    src="/images/mockup-checkout.png"
+    alt="O que você vai receber"
+    className="w-full max-w-md mx-auto h-auto object-contain"
+    loading="lazy"
+  />
 </m.div>
 ```
 
-### 5. Atualização do `Quiz.tsx`
+#### 4.3 Melhorar Responsividade do CTA
 
-Passar `offerFlow` para o componente `QuizResult`:
+**Ajustar classes do botão para melhor exibição mobile:**
 
+**De:**
 ```tsx
-{state.currentStep === "result" && state.result && (
-  <QuizResult
-    result={results[state.result]}
-    onCheckout={handleCheckout}
-    offerFlow={state.offerFlow}  // ADICIONAR
-  />
-)}
+className="w-full h-14 md:h-16 bg-gradient-gold text-primary-foreground font-bold text-base md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02] group"
 ```
 
----
+**Para:**
+```tsx
+className="w-full h-auto min-h-[3.5rem] md:min-h-[4rem] py-3 md:py-4 px-4 md:px-6 bg-gradient-gold text-primary-foreground font-bold text-sm sm:text-base md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02] group leading-tight"
+```
 
-## Mapeamento Completo de Perguntas
-
-### Pergunta 1
-**Nova:** "Qual dessas situações te deixa mais frustrado com mulheres?"
-| Opção | Texto |
-|-------|-------|
-| A | Ver caras "inferiores" conquistando mulheres que você nem consegue abordar |
-| B | Ser sempre o "confidente" que escuta sobre outros homens |
-| C | Mulheres te elogiarem como "homem ideal" mas nunca se interessarem sexualmente |
-| D | Conseguir números e conversas, mas elas sempre "esfriam" mysteriosamente |
-
-### Pergunta 2
-**Nova:** "Qual frase você já ouviu demais de mulheres?"
-| Opção | Texto |
-|-------|-------|
-| A | "Você é um amor, mas..." / "Você merece alguém especial" |
-| B | "Você é perfeito demais para mim" / "Não quero te machucar" |
-| C | "Somos muito diferentes" / "Você não me entende" |
-| D | "Você é o homem ideal no papel" / "Não rola química" |
-
-### Pergunta 3
-**Nova:** "O que mais te incomoda em festas e eventos?"
-| Opção | Texto |
-|-------|-------|
-| A | Ver homens "menos qualificados" saindo com as mulheres que você quer |
-| B | Ficar sempre observando sem coragem de abordar |
-| C | Não saber quando e como "partir para cima" sem parecer desesperado |
-| D | Conversar bem mas nunca evoluir para algo romântico |
-
-### Pergunta 4
-**Nova:** "Se pudesse ter uma transformação completa, qual seria sua maior conquista?"
-| Opção | Texto |
-|-------|-------|
-| A | Ser o homem mais desejado dos ambientes que frequento |
-| B | Ter múltiplas opções românticas e poder escolher |
-| C | Reconquistar minha ex com um magnetismo irresistível |
-| D | Nunca mais passar por situações humilhantes de rejeição |
-
-### Pergunta 5
-**Nova:** "Como você se vê hoje em termos de sucesso com mulheres?"
-| Opção | Texto |
-|-------|-------|
-| A | Tenho potencial, mas algo crucial está faltando |
-| B | Sou um bom partido, mas mulheres não me veem romanticamente |
-| C | Entendo teoria, mas travo na prática |
-| D | Já tive sucessos, mas nada consistente ou duradouro |
-
-### Pergunta 6
-**Nova:** "Onde você se sente mais confiante atualmente?"
-| Opção | Texto |
-|-------|-------|
-| A | Trabalho e ambientes profissionais |
-| B | Entre amigos próximos e família |
-| C | Conversas intelectuais e culturais |
-| D | Atividades que domino completamente |
-
-### Pergunta 7 (CONDICIONAL)
-**Nova:** "Para resolver definitivamente sua vida romântica, quanto você investiria?"
-| Opção | Texto | Fluxo |
-|-------|-------|-------|
-| A | Até R$ 50 - o mínimo possível | Flow 1 |
-| B | Entre R$ 50 e R$ 100 - algo acessível | Flow 1 |
-| C | Entre R$ 100 e R$ 150 - se realmente funcionar | Flow 2 |
-| D | Mais de R$ 150 - resultado vale qualquer investimento | Flow 2 |
-
-### Pergunta 8
-**Nova:** "Se tivesse acesso hoje a um método comprovado, quando começaria?"
-| Opção | Texto |
-|-------|-------|
-| A | Imediatamente - não aguento mais essa situação |
-| B | Esta semana - só preciso me organizar |
-| C | Este mês - quero me preparar mentalmente |
-| D | Eventualmente - quando for "a hora certa" |
+- `h-auto` + `min-h-[3.5rem]` permite altura flexível
+- `py-3 md:py-4` adiciona padding vertical adequado
+- `text-sm sm:text-base md:text-lg` escala progressiva do texto
+- `leading-tight` evita espaçamento excessivo entre linhas
+- `px-4 md:px-6` mantém padding horizontal adequado
 
 ---
 
-## Mapeamento Completo de Resultados
-
-### O Gentleman Invisível (40%)
-
-**Seu Resultado:**
-"Você é o clássico 'Gentleman Invisível' - um homem de valor excepcional que mulheres respeitam profundamente, mas que não desperta o fogo da paixão que elas sentem secretamente por outros homens."
-
-**Seu Maior Potencial:**
-"Transformar sua elegância natural em magnetismo sexual irresistível. Você já tem 80% do que precisa - falta apenas despertar a aura de mistério e perigo controlado que faz mulheres fantasiarem sobre você."
-
-**Próximo Passo:**
-"O Código de Arsène Lupin foi criado especificamente para homens como você. Através da Técnica da Elegância Perigosa, você manterá toda sua sofisticação mas adicionará o elemento de imprevisibilidade que transforma 'respeito' em 'obsessão romântica'."
-
-**CTA:** "DESPERTAR MEU MAGNETISMO AGORA"
-
----
-
-### O Estrategista Paralisado (30%)
-
-**Seu Resultado:**
-"Você é o 'Estrategista Paralisado' - possui inteligência superior e entende teoricamente sedução, mas seu próprio intelecto virou sua prisão. Você analisa demais e quando chega a hora H, trava."
-
-**Seu Maior Potencial:**
-"Transformar seu intelecto de obstáculo em arma de sedução letal. Sua capacidade analítica pode se tornar seu maior trunfo para criar mistério e tensão sexual calculada."
-
-**Próximo Passo:**
-"O Código de Arsène Lupin vai te ensinar as 12 Técnicas de Conversação Hipnótica que transformam pensamentos demais em charme irresistível. Você aprenderá a canalizar sua inteligência para criar fascinação ao invés de análise paralela."
-
-**CTA:** "TRANSFORMAR ANÁLISE EM ATRAÇÃO"
-
----
-
-### O Diamante Bruto (20%)
-
-**Seu Resultado:**
-"Você é o 'Diamante Bruto' - possui carisma natural e já teve sucessos, mas falta consistência e sofisticação para atrair mulheres de alto valor. Às vezes funciona, às vezes não."
-
-**Seu Maior Potencial:**
-"Sistematizar seu sucesso natural e elevar seu nível para conquistar as mulheres mais sofisticadas e desejadas. Você tem o raw material - precisa apenas do refinamento aristocrático."
-
-**Próximo Passo:**
-"O Código de Arsène Lupin vai polir seu diamante através do Protocolo de Conquista Parisiense. Você aprenderá a escalar elegantemente e manter o mistério que transforma atração em obsessão."
-
-**CTA:** "REFINAR MEU DIAMANTE AGORA"
-
----
-
-### O Guerreiro Ferido (10%)
-
-**Seu Resultado:**
-"Você é o 'Guerreiro Ferido' - já foi confiante romanticamente, mas experiências dolorosas (traição, rejeição humilhante) abalaram sua autoestima masculina. Agora se protege através do isolamento."
-
-**Seu Maior Potencial:**
-"Reconstruir sua confiança e se tornar mais poderoso do que jamais foi. Suas feridas podem se transformar em força magnética se você souber como canalizar essa experiência."
-
-**Próximo Passo:**
-"O Código de Arsène Lupin vai reconstruir sua confiança através da Metamorfose do Gentleman Ladrão. Você não apenas recuperará sua confiança anterior - se tornará blindado contra rejeição."
-
-**CTA:** "RECONSTRUIR MINHA CONFIANÇA"
-
----
-
-## Estrutura da Seção de Oferta (Página de Resultado)
+## Estrutura Final da Página de Resultado
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│  🔥 OFERTA ESPECIAL para seu perfil: 12x de R$ 10,03        │
-│                                                              │
-│  Bônus Inclusos:                                             │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │ 🎁 [Bônus Condicional baseado em Q7]                   │  │
-│  │    Flow 1 (A/B): "12 Técnicas de Conversação..."       │  │
-│  │    Flow 2 (C/D): "As Confissões de Arsène Lupin"       │  │
-│  ├────────────────────────────────────────────────────────┤  │
-│  │ 🎁 "25 Frases que Desarmam Qualquer Mulher"            │  │
-│  │    (Valor: R$ 67)                                      │  │
-│  └────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────┐
+│         [Ícone do Perfil]          │
+│                                     │
+│     Seu Tipo de Magnetismo          │
+│     [TÍTULO DO RESULTADO]           │
+│     X% dos homens...                │
+├─────────────────────────────────────┤
+│  📋 Seu Resultado                   │
+│  [Descrição...]                     │
+├─────────────────────────────────────┤
+│  ✨ Seu Maior Potencial             │
+│  [Descrição...]                     │
+├─────────────────────────────────────┤
+│  🎯 Próximo Passo                   │
+│  [Descrição...]                     │
+├─────────────────────────────────────┤
+│  🔥 OFERTA ESPECIAL: 12x R$ 10,03   │
+│  Bônus Inclusos:                    │
+│  🎁 [Bônus 1]                       │
+│  🎁 [Bônus 2]                       │
+├─────────────────────────────────────┤
+│         [MOCKUP IMAGE]              │  ← NOVO
+│   (responsivo, max-w-md, centered)  │
+├─────────────────────────────────────┤
+│  ┌─────────────────────────────┐    │
+│  │  [CTA RESPONSIVO] →         │    │  ← Dispara InitiateCheckout
+│  └─────────────────────────────┘    │
+│  🔒 Acesso imediato • Garantia 7d   │
+└─────────────────────────────────────┘
 ```
+
+---
+
+## Fluxo de Eventos Meta Pixel
+
+```text
+[Usuário navega pelo funil]
+        │
+        ▼
+   PageView (cada página)
+        │
+        ▼
+[Chega na página de resultado]
+        │
+        ▼
+   PageView (resultado)
+        │
+        ▼
+[Clica no CTA do resultado]
+        │
+        ├─► InitiateCheckout (NOVO)
+        │
+        ├─► ChegouNoCheckout (existente)
+        │
+        ▼
+   [Redirect para Ticto]
+```
+
+---
+
+## O Que NÃO Será Alterado
+
+- ✅ Copy (nenhuma palavra)
+- ✅ Estrutura do funil
+- ✅ Ordem das páginas
+- ✅ Lógica condicional existente
+- ✅ Design geral, cores ou tipografia
+- ✅ Performance (mockup com lazy loading)
+- ✅ Barra de progresso (mantida intacta)
+- ✅ Eventos existentes do Meta Pixel
 
 ---
 
 ## Garantias
 
-- ✅ Copy substituída literalmente, sem edições
-- ✅ Estrutura visual/layout 100% preservada
-- ✅ Cores, fontes e espaçamentos intactos
-- ✅ Lógica de navegação inalterada
-- ✅ Métricas e rastreamento não afetados
-- ✅ Lógica condicional Q7 → Bônus implementada
-- ✅ Ordem das páginas mantida
-- ✅ Mesmo número de perguntas (8)
-- ✅ Performance não impactada
-
+- Numeração removida, barra de progresso preservada
+- Ícone de seta discreto no CTA da landing
+- InitiateCheckout disparado corretamente no clique do resultado
+- CTAs responsivos sem quebra estranha de linha
+- Mockup visualmente integrado e 100% responsivo
+- Não altera nenhum texto/copy existente
