@@ -1,251 +1,328 @@
 
-# Plano: Modo Admin + Remoção de Partículas
+
+# Plano: Atualização Completa da Copy do Funil
 
 ## Resumo
 
-Implementar duas melhorias:
-1. **Navegação livre para admin**: Painel de controle flutuante no ambiente Lovable que permite navegar por todas as etapas do funil sem bloqueios
-2. **Remoção de partículas**: Eliminar completamente a animação de partículas da landing e result pages
+Substituir 100% do conteúdo textual do funil pela nova copy fornecida, mantendo estrutura visual, layout, cores, fontes e lógica de navegação intactos.
 
 ---
 
-## Parte 1: Navegação Irrestrita para Admin
+## Arquivos a Modificar
 
-### Estratégia
+| Arquivo | Tipo de Alteração |
+|---------|-------------------|
+| `src/lib/quizConfig.ts` | Atualizar perguntas, resultados e adicionar dados de bônus |
+| `src/components/quiz/QuizLanding.tsx` | Atualizar headline, subtítulo, CTA e value proposition |
+| `src/components/quiz/EmailCapture.tsx` | Atualizar título, descrição, benefícios e CTA |
+| `src/components/quiz/QuizResult.tsx` | Adicionar seção de oferta e bônus com lógica condicional |
+| `src/components/quiz/Quiz.tsx` | Passar `offerFlow` para QuizResult |
 
-Criar um componente `AdminNavPanel` que aparece **apenas em ambiente interno** (detectado via `isInternalAccess()`) e permite:
-- Ir diretamente para qualquer etapa (Landing, Q1-Q8, Email, Loading, Result)
-- Escolher qualquer perfil de resultado sem responder perguntas
-- Bypass automático de validações
+---
 
-### Arquivos a Criar/Modificar
+## Detalhes de Implementação
 
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/quiz/AdminNavPanel.tsx` | **NOVO** - Painel flutuante de navegação admin |
-| `src/hooks/useQuiz.ts` | Adicionar funções de navegação direta: `goToStep`, `setResult` |
-| `src/components/quiz/Quiz.tsx` | Integrar AdminNavPanel |
+### 1. Atualização do `quizConfig.ts`
 
-### Novo Componente: `AdminNavPanel.tsx`
+#### Perguntas Atualizadas (8 perguntas)
 
-```tsx
-// Painel flutuante discreto (apenas em ambiente interno)
-// - Posicionado no canto inferior direito
-// - Colapsável para não atrapalhar visualização
-// - Botões para cada etapa do funil
-// - Seletor de perfil de resultado
-```
+| # | Nova Pergunta |
+|---|---------------|
+| 1 | "Qual dessas situações te deixa mais frustrado com mulheres?" |
+| 2 | "Qual frase você já ouviu demais de mulheres?" |
+| 3 | "O que mais te incomoda em festas e eventos?" |
+| 4 | "Se pudesse ter uma transformação completa, qual seria sua maior conquista?" |
+| 5 | "Como você se vê hoje em termos de sucesso com mulheres?" |
+| 6 | "Onde você se sente mais confiante atualmente?" |
+| 7 | "Para resolver definitivamente sua vida romântica, quanto você investiria?" |
+| 8 | "Se tivesse acesso hoje a um método comprovado, quando começaria?" |
 
-**Funcionalidades do Painel:**
+#### Resultados Atualizados (4 perfis)
 
-| Botão | Ação |
-|-------|------|
-| Landing | Ir para landing page |
-| Q1 - Q8 | Ir diretamente para qualquer pergunta |
-| Email | Ir para captura de email (sem preencher) |
-| Loading | Ver animação de loading |
-| Resultado | Ver página de resultado (com seletor de perfil) |
+**Gentleman → "O Gentleman Invisível" (40%)**
+- Subtítulo: "40%"
+- Novo diagnóstico, potencial e próximo passo conforme copy
+- CTA: "DESPERTAR MEU MAGNETISMO AGORA"
 
-### Modificações no `useQuiz.ts`
+**Estrategista → "O Estrategista Paralisado" (30%)**
+- Subtítulo atualizado
+- CTA: "TRANSFORMAR ANÁLISE EM ATRAÇÃO"
 
-Adicionar funções de navegação direta que **só funcionam em ambiente interno**:
+**Diamante → "O Diamante Bruto" (20%)**
+- Subtítulo atualizado
+- CTA: "REFINAR MEU DIAMANTE AGORA"
+
+**Guerreiro → "O Guerreiro Ferido" (10%)**
+- Subtítulo atualizado
+- CTA: "RECONSTRUIR MINHA CONFIANÇA"
+
+#### Nova Estrutura de Dados para Bônus
 
 ```typescript
-// Ir diretamente para qualquer step
-const goToStep = useCallback((step: QuizState["currentStep"], questionIndex?: number) => {
-  if (!isInternalAccess()) return; // Proteção
-  
-  setState((prev) => ({
-    ...prev,
-    currentStep: step,
-    currentQuestion: questionIndex ?? prev.currentQuestion,
-  }));
-}, []);
+export interface ResultData {
+  type: ResultType;
+  title: string;
+  subtitle: string;
+  percentage: string;
+  // Renomear campos para refletir nova estrutura:
+  result: string;        // "Seu Resultado"
+  potential: string;     // "Seu Maior Potencial"
+  nextStep: string;      // "Próximo Passo"
+  ctaText: string;
+}
 
-// Definir resultado diretamente (para visualizar diferentes perfis)
-const setResultDirect = useCallback((resultType: ResultType) => {
-  if (!isInternalAccess()) return; // Proteção
-  
-  setState((prev) => ({
-    ...prev,
-    result: resultType,
-    currentStep: "result",
-  }));
-}, []);
-
-// Pular loading e ir direto para resultado
-const skipLoading = useCallback(() => {
-  if (!isInternalAccess()) return; // Proteção
-  completeLoading();
-}, [completeLoading]);
+// Configuração de bônus (separada por fluxo)
+export const bonusConfig = {
+  flow1: {
+    primary: '🎁 "12 Técnicas de Conversação que Hipnotizam Mulheres"',
+    secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher" (Valor: R$ 67)',
+  },
+  flow2: {
+    primary: '🎁 "As Confissões de Arsène Lupin" (Valor: R$ 97)',
+    secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher" (Valor: R$ 67)',
+  },
+  pricing: "🔥 OFERTA ESPECIAL para seu perfil: 12x de R$ 10,03",
+};
 ```
 
-### Integração no `Quiz.tsx`
+### 2. Atualização do `QuizLanding.tsx`
+
+| Elemento | Conteúdo Atual | Novo Conteúdo |
+|----------|----------------|---------------|
+| Headline | "Por Que Mulheres Te Veem Apenas Como 'Amigo' (Mesmo Você Sendo Um Bom Partido)?" | "Por Que Algumas Mulheres Te Veem Apenas Como 'Amigo'?" |
+| Subtítulo | Descubra o ÚNICO erro... Carnaval 2026 | "Descubra o ÚNICO bloqueio que está sabotando suas chances com mulheres de qualidade e como despertar o magnetismo que elas não conseguem resistir" |
+| Value Prop (abaixo CTA) | "Apenas 2 minutos podem mudar..." | "Em menos de 2 minutos, você descobrirá exatamente por que mulheres sofisticadas te colocam na friendzone e qual é seu tipo específico de magnetismo masculino adormecido." |
+| CTA | "DESCOBRIR MEU ERRO FATAL AGORA" | "DESCOBRIR MEU BLOQUEIO AGORA" |
+| Social Proof | "X homens já descobriram seu erro" | Manter estrutura, ajustar texto se necessário |
+
+### 3. Atualização do `EmailCapture.tsx`
+
+| Elemento | Novo Conteúdo |
+|----------|---------------|
+| Título | "RECEBA SEU DIAGNÓSTICO + ACESSO EXCLUSIVO" |
+| Value Proposition | "Descubra seu perfil e ganhe acesso exclusivo ao método que transformou homens em ímãs de atração feminina" |
+| Placeholder | "Seu melhor email aqui..." (manter) |
+| CTA | "DESCOBRIR MEU PERFIL AGORA" |
+| Segurança | 🔒 "Seus dados estão seguros. Nunca compartilhamos seu email." (manter) |
+
+**Lista de benefícios será simplificada** (remover bônus específicos desta tela, pois serão exibidos na página de resultado)
+
+### 4. Atualização do `QuizResult.tsx`
+
+Adicionar nova seção de **Oferta Especial** e **Bônus** com lógica condicional:
 
 ```tsx
-import { AdminNavPanel } from "./AdminNavPanel";
-import { isInternalAccess } from "@/lib/environment";
+interface QuizResultProps {
+  result: ResultData;
+  onCheckout: () => void;
+  offerFlow: 1 | 2 | null;  // ADICIONAR
+}
 
-// Dentro do componente Quiz:
-return (
-  <div className="min-h-screen bg-background">
-    {/* Painel de navegação admin - só aparece em ambiente interno */}
-    {isInternalAccess() && (
-      <AdminNavPanel
-        currentStep={state.currentStep}
-        currentQuestion={state.currentQuestion}
-        currentResult={state.result}
-        onGoToStep={goToStep}
-        onSetResult={setResultDirect}
-        totalQuestions={questions.length}
-      />
-    )}
-    
-    {/* Resto do componente permanece igual */}
-    ...
-  </div>
-);
+// Dentro do componente, após a seção de "Próximo Passo":
+{/* Offer Section */}
+<m.div className="...">
+  <p className="text-primary font-bold">
+    🔥 OFERTA ESPECIAL para seu perfil: 12x de R$ 10,03
+  </p>
+  
+  <p className="text-muted-foreground mt-3">Bônus Inclusos:</p>
+  <ul className="mt-2 space-y-2">
+    <li>
+      {offerFlow === 1 
+        ? '🎁 "12 Técnicas de Conversação que Hipnotizam Mulheres"'
+        : '🎁 "As Confissões de Arsène Lupin" (Valor: R$ 97)'
+      }
+    </li>
+    <li>
+      🎁 "25 Frases que Desarmam Qualquer Mulher" (Valor: R$ 67)
+    </li>
+  </ul>
+</m.div>
 ```
 
-### Design do AdminNavPanel
+### 5. Atualização do `Quiz.tsx`
+
+Passar `offerFlow` para o componente `QuizResult`:
+
+```tsx
+{state.currentStep === "result" && state.result && (
+  <QuizResult
+    result={results[state.result]}
+    onCheckout={handleCheckout}
+    offerFlow={state.offerFlow}  // ADICIONAR
+  />
+)}
+```
+
+---
+
+## Mapeamento Completo de Perguntas
+
+### Pergunta 1
+**Nova:** "Qual dessas situações te deixa mais frustrado com mulheres?"
+| Opção | Texto |
+|-------|-------|
+| A | Ver caras "inferiores" conquistando mulheres que você nem consegue abordar |
+| B | Ser sempre o "confidente" que escuta sobre outros homens |
+| C | Mulheres te elogiarem como "homem ideal" mas nunca se interessarem sexualmente |
+| D | Conseguir números e conversas, mas elas sempre "esfriam" mysteriosamente |
+
+### Pergunta 2
+**Nova:** "Qual frase você já ouviu demais de mulheres?"
+| Opção | Texto |
+|-------|-------|
+| A | "Você é um amor, mas..." / "Você merece alguém especial" |
+| B | "Você é perfeito demais para mim" / "Não quero te machucar" |
+| C | "Somos muito diferentes" / "Você não me entende" |
+| D | "Você é o homem ideal no papel" / "Não rola química" |
+
+### Pergunta 3
+**Nova:** "O que mais te incomoda em festas e eventos?"
+| Opção | Texto |
+|-------|-------|
+| A | Ver homens "menos qualificados" saindo com as mulheres que você quer |
+| B | Ficar sempre observando sem coragem de abordar |
+| C | Não saber quando e como "partir para cima" sem parecer desesperado |
+| D | Conversar bem mas nunca evoluir para algo romântico |
+
+### Pergunta 4
+**Nova:** "Se pudesse ter uma transformação completa, qual seria sua maior conquista?"
+| Opção | Texto |
+|-------|-------|
+| A | Ser o homem mais desejado dos ambientes que frequento |
+| B | Ter múltiplas opções românticas e poder escolher |
+| C | Reconquistar minha ex com um magnetismo irresistível |
+| D | Nunca mais passar por situações humilhantes de rejeição |
+
+### Pergunta 5
+**Nova:** "Como você se vê hoje em termos de sucesso com mulheres?"
+| Opção | Texto |
+|-------|-------|
+| A | Tenho potencial, mas algo crucial está faltando |
+| B | Sou um bom partido, mas mulheres não me veem romanticamente |
+| C | Entendo teoria, mas travo na prática |
+| D | Já tive sucessos, mas nada consistente ou duradouro |
+
+### Pergunta 6
+**Nova:** "Onde você se sente mais confiante atualmente?"
+| Opção | Texto |
+|-------|-------|
+| A | Trabalho e ambientes profissionais |
+| B | Entre amigos próximos e família |
+| C | Conversas intelectuais e culturais |
+| D | Atividades que domino completamente |
+
+### Pergunta 7 (CONDICIONAL)
+**Nova:** "Para resolver definitivamente sua vida romântica, quanto você investiria?"
+| Opção | Texto | Fluxo |
+|-------|-------|-------|
+| A | Até R$ 50 - o mínimo possível | Flow 1 |
+| B | Entre R$ 50 e R$ 100 - algo acessível | Flow 1 |
+| C | Entre R$ 100 e R$ 150 - se realmente funcionar | Flow 2 |
+| D | Mais de R$ 150 - resultado vale qualquer investimento | Flow 2 |
+
+### Pergunta 8
+**Nova:** "Se tivesse acesso hoje a um método comprovado, quando começaria?"
+| Opção | Texto |
+|-------|-------|
+| A | Imediatamente - não aguento mais essa situação |
+| B | Esta semana - só preciso me organizar |
+| C | Este mês - quero me preparar mentalmente |
+| D | Eventualmente - quando for "a hora certa" |
+
+---
+
+## Mapeamento Completo de Resultados
+
+### O Gentleman Invisível (40%)
+
+**Seu Resultado:**
+"Você é o clássico 'Gentleman Invisível' - um homem de valor excepcional que mulheres respeitam profundamente, mas que não desperta o fogo da paixão que elas sentem secretamente por outros homens."
+
+**Seu Maior Potencial:**
+"Transformar sua elegância natural em magnetismo sexual irresistível. Você já tem 80% do que precisa - falta apenas despertar a aura de mistério e perigo controlado que faz mulheres fantasiarem sobre você."
+
+**Próximo Passo:**
+"O Código de Arsène Lupin foi criado especificamente para homens como você. Através da Técnica da Elegância Perigosa, você manterá toda sua sofisticação mas adicionará o elemento de imprevisibilidade que transforma 'respeito' em 'obsessão romântica'."
+
+**CTA:** "DESPERTAR MEU MAGNETISMO AGORA"
+
+---
+
+### O Estrategista Paralisado (30%)
+
+**Seu Resultado:**
+"Você é o 'Estrategista Paralisado' - possui inteligência superior e entende teoricamente sedução, mas seu próprio intelecto virou sua prisão. Você analisa demais e quando chega a hora H, trava."
+
+**Seu Maior Potencial:**
+"Transformar seu intelecto de obstáculo em arma de sedução letal. Sua capacidade analítica pode se tornar seu maior trunfo para criar mistério e tensão sexual calculada."
+
+**Próximo Passo:**
+"O Código de Arsène Lupin vai te ensinar as 12 Técnicas de Conversação Hipnótica que transformam pensamentos demais em charme irresistível. Você aprenderá a canalizar sua inteligência para criar fascinação ao invés de análise paralela."
+
+**CTA:** "TRANSFORMAR ANÁLISE EM ATRAÇÃO"
+
+---
+
+### O Diamante Bruto (20%)
+
+**Seu Resultado:**
+"Você é o 'Diamante Bruto' - possui carisma natural e já teve sucessos, mas falta consistência e sofisticação para atrair mulheres de alto valor. Às vezes funciona, às vezes não."
+
+**Seu Maior Potencial:**
+"Sistematizar seu sucesso natural e elevar seu nível para conquistar as mulheres mais sofisticadas e desejadas. Você tem o raw material - precisa apenas do refinamento aristocrático."
+
+**Próximo Passo:**
+"O Código de Arsène Lupin vai polir seu diamante através do Protocolo de Conquista Parisiense. Você aprenderá a escalar elegantemente e manter o mistério que transforma atração em obsessão."
+
+**CTA:** "REFINAR MEU DIAMANTE AGORA"
+
+---
+
+### O Guerreiro Ferido (10%)
+
+**Seu Resultado:**
+"Você é o 'Guerreiro Ferido' - já foi confiante romanticamente, mas experiências dolorosas (traição, rejeição humilhante) abalaram sua autoestima masculina. Agora se protege através do isolamento."
+
+**Seu Maior Potencial:**
+"Reconstruir sua confiança e se tornar mais poderoso do que jamais foi. Suas feridas podem se transformar em força magnética se você souber como canalizar essa experiência."
+
+**Próximo Passo:**
+"O Código de Arsène Lupin vai reconstruir sua confiança através da Metamorfose do Gentleman Ladrão. Você não apenas recuperará sua confiança anterior - se tornará blindado contra rejeição."
+
+**CTA:** "RECONSTRUIR MINHA CONFIANÇA"
+
+---
+
+## Estrutura da Seção de Oferta (Página de Resultado)
 
 ```text
-┌─────────────────────────────────────┐
-│  🔧 Admin Nav          [−] [×]     │
-├─────────────────────────────────────┤
-│  Etapas do Funil:                   │
-│  [Landing] [Q1] [Q2] [Q3] [Q4]     │
-│  [Q5] [Q6] [Email] [Q7] [Q8]       │
-│  [Loading] [Result]                 │
-├─────────────────────────────────────┤
-│  Ver Resultado como:                │
-│  [Gentleman] [Estrategista]         │
-│  [Diamante] [Guerreiro]             │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  🔥 OFERTA ESPECIAL para seu perfil: 12x de R$ 10,03        │
+│                                                              │
+│  Bônus Inclusos:                                             │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │ 🎁 [Bônus Condicional baseado em Q7]                   │  │
+│  │    Flow 1 (A/B): "12 Técnicas de Conversação..."       │  │
+│  │    Flow 2 (C/D): "As Confissões de Arsène Lupin"       │  │
+│  ├────────────────────────────────────────────────────────┤  │
+│  │ 🎁 "25 Frases que Desarmam Qualquer Mulher"            │  │
+│  │    (Valor: R$ 67)                                      │  │
+│  └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
 ```
-
-**Características:**
-- Posição fixa no canto inferior direito
-- Botão para minimizar/expandir
-- Visual discreto (semi-transparente, borda sutil)
-- Z-index alto para ficar sobre o conteúdo
-- Não afeta layout do funil
-
----
-
-## Parte 2: Remoção das Partículas
-
-### Arquivos a Modificar
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/components/quiz/QuizLanding.tsx` | Remover `<ParticleBackground />` |
-| `src/components/quiz/QuizResult.tsx` | Remover `<ParticleBackground />` |
-| `src/components/quiz/ParticleBackground.tsx` | **DELETAR** (opcional) |
-| `src/index.css` | Remover estilos de partículas (opcional) |
-
-### Modificação em `QuizLanding.tsx`
-
-```diff
-- import { ParticleBackground } from "./ParticleBackground";
-
-  export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
-    return (
-      <LazyMotion features={domAnimation} strict>
-        <div className="...">
--         {/* Particle effects */}
--         <ParticleBackground />
-
-          {/* Decorative elements - MANTIDOS */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-1/4 left-1/4 w-32 md:w-64 ..." />
-            <div className="absolute bottom-1/4 right-1/4 w-48 md:w-96 ..." />
-          </div>
-```
-
-### Modificação em `QuizResult.tsx`
-
-```diff
-- import { ParticleBackground } from "./ParticleBackground";
-
-  export const QuizResult = memo(function QuizResult({ result, onCheckout }) {
-    return (
-      <LazyMotion features={domAnimation} strict>
-        <div className="...">
--         {/* Particle effects */}
--         <ParticleBackground />
-
-          <div className="flex-1 ...">
-```
-
-### CSS a Remover (opcional - para limpeza)
-
-```css
-/* Em src/index.css - remover estas linhas se deletar ParticleBackground */
-@keyframes particle-float { ... }
-.animate-particle-float { ... }
-.bg-gold-particle { ... }
-.bg-burgundy-particle { ... }
-```
-
----
-
-## Fluxo de Proteção
-
-```text
-┌────────────────────────────────────────────────────────────────┐
-│                    ACESSO AO FUNIL                              │
-└────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-                    ┌───────────────────┐
-                    │ isInternalAccess()│
-                    └─────────┬─────────┘
-                              │
-          ┌───────────────────┴───────────────────┐
-          ▼                                       ▼
-┌──────────────────────┐               ┌──────────────────────┐
-│   INTERNO = true     │               │   INTERNO = false    │
-│   (Lovable Preview)  │               │   (Produção)         │
-│                      │               │                      │
-│ ✅ AdminNavPanel     │               │ ❌ Sem AdminNavPanel │
-│    visível           │               │                      │
-│ ✅ Navegação livre   │               │ ✅ Fluxo normal      │
-│ ❌ Sem tracking      │               │ ✅ Validações ativas │
-│ ❌ Sem leads salvos  │               │ ✅ Tracking ativo    │
-└──────────────────────┘               └──────────────────────┘
-```
-
----
-
-## Resultado Esperado
-
-### Experiência do Admin (Ambiente Lovable)
-- Painel flutuante no canto inferior direito
-- Navegar livremente entre todas as etapas
-- Visualizar qualquer perfil de resultado
-- Testar fluxo sem preencher nada
-- Não polui métricas
-
-### Experiência do Usuário Final (Produção)
-- **Nenhuma mudança** no comportamento
-- Sem painel de navegação
-- Fluxo normal com validações
-- Tracking funcionando
-
-### Performance
-- Remoção de partículas = menos animações CSS
-- Carregamento mais rápido da landing page
-- Visual mais limpo e elegante
-- Mantém os elementos decorativos estáticos (blur gradients)
 
 ---
 
 ## Garantias
 
-- Admin Panel só aparece em ambiente interno (proteção tripla)
-- Funções de navegação protegidas por `isInternalAccess()`
-- Zero impacto em métricas e rastreamento
-- Layout e tipografia 100% preservados
-- Performance melhorada com remoção de partículas
-- Código do `ParticleBackground` pode ser deletado completamente
+- ✅ Copy substituída literalmente, sem edições
+- ✅ Estrutura visual/layout 100% preservada
+- ✅ Cores, fontes e espaçamentos intactos
+- ✅ Lógica de navegação inalterada
+- ✅ Métricas e rastreamento não afetados
+- ✅ Lógica condicional Q7 → Bônus implementada
+- ✅ Ordem das páginas mantida
+- ✅ Mesmo número de perguntas (8)
+- ✅ Performance não impactada
+
