@@ -3,6 +3,7 @@ import { LazyMotion, domAnimation, m } from "framer-motion";
 import { Crown, Brain, Gem, Shield, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResultType, ResultData, bonusConfig } from "@/lib/quizConfig";
+import { useMetaPixel } from "@/hooks/useMetaPixel";
 
 interface QuizResultProps {
   result: ResultData;
@@ -18,9 +19,20 @@ const iconMap: Record<ResultType, React.ReactNode> = {
 };
 
 export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFlow }: QuizResultProps) {
+  const { trackInitiateCheckout } = useMetaPixel();
+  
   // Determina os bônus baseado no fluxo (Q7)
   const flow = offerFlow || 2; // Default para flow 2 se não definido
   const bonuses = flow === 1 ? bonusConfig.flow1 : bonusConfig.flow2;
+
+  // Handler que dispara InitiateCheckout antes do redirect
+  const handleCheckoutClick = () => {
+    trackInitiateCheckout({
+      result_type: result.type,
+      offer_flow: flow,
+    });
+    onCheckout();
+  };
 
   return (
     <LazyMotion features={domAnimation} strict>
@@ -133,6 +145,21 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             </ul>
           </m.div>
 
+          {/* Mockup */}
+          <m.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.85, duration: 0.6 }}
+            className="w-full mb-5 md:mb-8"
+          >
+            <img
+              src="/images/mockup-checkout.png"
+              alt="O que você vai receber"
+              className="w-full max-w-md mx-auto h-auto object-contain"
+              loading="lazy"
+            />
+          </m.div>
+
           {/* CTA */}
           <m.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -141,12 +168,12 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             className="w-full max-w-md"
           >
             <Button
-              onClick={onCheckout}
+              onClick={handleCheckoutClick}
               size="lg"
-              className="w-full h-14 md:h-16 bg-gradient-gold text-primary-foreground font-bold text-base md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02] group"
+              className="w-full h-auto min-h-[3.5rem] md:min-h-[4rem] py-3 md:py-4 px-4 md:px-6 bg-gradient-gold text-primary-foreground font-bold text-sm sm:text-base md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02] group leading-tight"
             >
               {result.ctaText}
-              <ArrowRight className="w-5 h-5 md:w-5 md:h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-5 h-5 md:w-5 md:h-5 ml-2 shrink-0 group-hover:translate-x-1 transition-transform" />
             </Button>
             
             <p className="text-xs md:text-xs text-muted-foreground text-center mt-4 md:mt-4">

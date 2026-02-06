@@ -48,9 +48,6 @@ export const QuizQuestion = memo(function QuizQuestion({
               <ChevronLeft className="w-5 h-5 md:w-5 md:h-5" />
               <span className="text-sm md:text-sm">Voltar</span>
             </button>
-            <span className="text-sm md:text-sm text-muted-foreground">
-              {questionNumber}/{totalQuestions}
-            </span>
           </div>
 
           {/* Progress bar */}
