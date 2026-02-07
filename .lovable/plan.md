@@ -1,195 +1,166 @@
 
-# Plano: Otimização de Performance do Funil
+# Plano: Nova Paleta de Cores - Vermelho Profundo e Preto
 
-## Diagnóstico Atual
+## Analise das Imagens de Referencia
 
-O projeto ja possui boas otimizações (code splitting, lazy loading, CSS critico inline, font preloading). Vou focar nas oportunidades remanescentes que podem reduzir ainda mais o tempo de carregamento.
-
----
-
-## Otimizações Identificadas
-
-### 1. Remover TooltipProvider do caminho critico (`App.tsx`)
-
-O `TooltipProvider` importa `@radix-ui/react-tooltip` sincronamente no bundle principal, mas nao e usado na landing page do quiz. Envolve-lo em lazy load ou remove-lo do wrapper global.
-
-**Arquivo:** `src/App.tsx`
-
-**Alteracao:** Remover `TooltipProvider` do wrapper global (nao e usado no funil) ou torna-lo lazy. Como o funil nao usa tooltips, remover o wrapper e seguro.
-
-### 2. Lazy load de react-router-dom e QueryClient (`App.tsx` / `main.tsx`)
-
-O `react-router-dom` e `@tanstack/react-query` sao carregados sincronamente mas o quiz nao precisa de React Query. Porem, como react-query ja esta em chunk separado e o router e essencial, o ganho seria marginal. Manter como esta.
-
-### 3. Otimizar carregamento da fonte Archivo (`index.html`)
-
-A fonte ja usa `preload` com `onload` swap, o que e bom. Adicionar `font-display: swap` inline e garantir que o fallback de sistema seja rapido.
-
-**Arquivo:** `index.html`
-
-**Alteracao:** Adicionar fallback de fonte do sistema no CSS critico inline para evitar FOIT (Flash of Invisible Text).
-
-### 4. Defer do Meta Pixel mais agressivo (`index.html`)
-
-O Meta Pixel ja usa `window.addEventListener('load')`, mas o script ainda registra o listener no `<head>`. Mover para o final do `<body>` ou usar `requestIdleCallback`.
-
-**Arquivo:** `index.html`
-
-**Alteracao:** Usar `requestIdleCallback` com fallback para `setTimeout` em vez de `load` event, para adiar ainda mais.
-
-### 5. Preload da rota critica - QuizLanding (`Quiz.tsx`)
-
-O `QuizLanding` ja e importado sincronamente (bom). Os componentes lazy (QuizQuestion, EmailCapture, etc.) ja usam preload progressivo. Nenhuma alteracao necessaria aqui.
-
-### 6. Otimizar imagem do mockup (`QuizResult.tsx`)
-
-A imagem `mockup-checkout.png` ja usa `loading="lazy"`, o que e correto pois so aparece na pagina de resultado. Nenhuma alteracao necessaria.
-
-### 7. Adicionar manual chunks para react-router-dom (`vite.config.ts`)
-
-Separar `react-router-dom` em seu proprio chunk para melhor cache e paralelismo de download.
-
-**Arquivo:** `vite.config.ts`
-
-**Alteracao:** Adicionar `'vendor-router': ['react-router-dom']` aos manualChunks.
-
-### 8. Remover import sincrono de `NotFound` (`App.tsx`)
-
-A pagina `NotFound` e importada sincronamente mas raramente acessada. Tornar lazy.
-
-**Arquivo:** `src/App.tsx`
-
-**Alteracao:** Lazy load de `NotFound`.
+As imagens mostram uma identidade visual dominada por:
+- **Fundo**: Preto profundo com toques de vermelho escuro
+- **Cor primaria**: Vermelho profundo/crimson (tons de vinho a vermelho vivo)
+- **Acentos**: Variantes de vermelho (claro para highlights, escuro para profundidade)
+- **Contraste**: Texto claro (branco/creme) sobre fundos escuros
+- **Ausencia de dourado**: A paleta atual usa dourado como primaria - sera substituida por vermelho
 
 ---
 
-## Resumo de Alteracoes
+## Arquivos a Modificar
 
-| Arquivo | Alteracao | Impacto |
-|---------|-----------|---------|
-| `src/App.tsx` | Remover TooltipProvider, lazy load NotFound | Reduz bundle principal (~15-20KB) |
-| `vite.config.ts` | Adicionar chunk para react-router-dom | Melhor cache/paralelismo |
-| `index.html` | Otimizar Meta Pixel com requestIdleCallback, melhorar font fallback | Reduz bloqueio no load event |
+| Arquivo | Alteracao |
+|---------|-----------|
+| `src/index.css` | Atualizar todas as CSS variables e utility classes |
+| `tailwind.config.ts` | Renomear tokens de cor (gold -> red) |
+| `index.html` | Atualizar CSS critico inline |
+| `src/components/quiz/QuizLanding.tsx` | Atualizar classes de cor |
+| `src/components/quiz/QuizQuestion.tsx` | Atualizar cores do ripple/selection |
+| `src/components/quiz/QuizResult.tsx` | Atualizar classes de cor |
+| `src/components/quiz/EmailCapture.tsx` | Atualizar classes de cor |
+| `src/components/quiz/QuizLoading.tsx` | Atualizar classes de cor |
 
 ---
 
-## Detalhes Tecnicos
+## Nova Paleta (HSL)
 
-### `src/App.tsx`
+| Token | Valor Atual (Gold) | Novo Valor (Red) | Descricao |
+|-------|--------------------|--------------------|-----------|
+| `--primary` | `43 74% 53%` | `0 80% 42%` | Vermelho profundo principal |
+| `--primary-foreground` | `0 0% 4%` | `0 0% 95%` | Texto claro sobre vermelho |
+| `--accent` | `43 74% 53%` | `0 80% 42%` | Mesmo que primary |
+| `--accent-foreground` | `0 0% 4%` | `0 0% 95%` | Texto claro |
+| `--ring` | `43 74% 53%` | `0 80% 42%` | Focus ring vermelho |
+| `--gold` | `43 74% 53%` | `0 80% 42%` | Renomear para --lupin-red |
+| `--gold-light` | `43 74% 65%` | `0 75% 55%` | Vermelho mais claro |
+| `--gold-dark` | `43 74% 40%` | `0 85% 28%` | Vermelho escuro/vinho |
+| `--secondary` | `348 56% 33%` | `350 60% 25%` | Borgonha mais escuro |
+| `--burgundy` | `348 56% 33%` | `350 60% 25%` | Borgonha escuro |
+| `--burgundy-light` | `348 56% 45%` | `350 55% 38%` | Borgonha medio |
 
-```tsx
-import { lazy, Suspense } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+---
 
-const Admin = lazy(() => import("./pages/Admin"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const Toaster = lazy(() => 
-  import("@/components/ui/toaster").then(m => ({ default: m.Toaster }))
-);
-const Sonner = lazy(() => 
-  import("@/components/ui/sonner").then(m => ({ default: m.Toaster }))
-);
+## Detalhes de Implementacao
 
-const queryClient = new QueryClient();
+### 1. `src/index.css` - CSS Variables
 
-const RouteFallback = () => (
-  <div className="min-h-screen bg-background" />
-);
+Atualizar os valores de todas as variaveis de cor no `:root` e `.dark`:
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <Suspense fallback={null}>
-      <Toaster />
-      <Sonner />
-    </Suspense>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route 
-          path="/admin" 
-          element={
-            <Suspense fallback={<RouteFallback />}>
-              <Admin />
-            </Suspense>
-          } 
-        />
-        <Route path="*" element={
-          <Suspense fallback={<RouteFallback />}>
-            <NotFound />
-          </Suspense>
-        } />
-      </Routes>
-    </BrowserRouter>
-  </QueryClientProvider>
-);
+```css
+--primary: 0 80% 42%;
+--primary-foreground: 0 0% 95%;
+--accent: 0 80% 42%;
+--accent-foreground: 0 0% 95%;
+--ring: 0 80% 42%;
+--secondary: 350 60% 25%;
+--secondary-foreground: 45 29% 90%;
+
+/* Custom Quiz Colors - renomeados semanticamente */
+--gold: 0 80% 42%;
+--gold-light: 0 75% 55%;
+--gold-dark: 0 85% 28%;
+--burgundy: 350 60% 25%;
+--burgundy-light: 350 55% 38%;
 ```
 
-Remove `TooltipProvider` (nao usado no funil) e lazy load `NotFound`.
+### 2. `src/index.css` - Utility Classes
 
-### `vite.config.ts`
+Atualizar os gradientes e sombras:
 
-```typescript
-manualChunks: {
-  'vendor-supabase': ['@supabase/supabase-js'],
-  'vendor-framer': ['framer-motion'],
-  'vendor-react-query': ['@tanstack/react-query'],
-  'vendor-router': ['react-router-dom'],
+```css
+.text-gradient-gold {
+  /* De dourado para vermelho degradado */
+  @apply bg-gradient-to-r from-[hsl(0_75%_55%)] via-[hsl(0_80%_42%)] to-[hsl(0_85%_28%)] bg-clip-text text-transparent;
+}
+
+.bg-gradient-gold {
+  @apply bg-gradient-to-r from-[hsl(0_85%_28%)] via-[hsl(0_80%_42%)] to-[hsl(0_75%_55%)];
+}
+
+.shadow-gold {
+  box-shadow: 0 4px 30px -5px hsl(0 80% 42% / 0.3);
+}
+
+.shadow-gold-lg {
+  box-shadow: 0 10px 50px -10px hsl(0 80% 42% / 0.4);
+}
+
+.bg-gradient-lupin-progress {
+  background: linear-gradient(
+    90deg,
+    hsl(350 60% 25%) 0%,
+    hsl(355 55% 35%) 20%,
+    hsl(0 75% 42%) 50%,
+    hsl(0 80% 50%) 100%
+  );
+}
+
+.shadow-lupin-glow {
+  box-shadow: 
+    0 0 8px hsl(0 80% 50% / 0.5),
+    0 0 20px hsl(350 60% 25% / 0.3);
 }
 ```
 
-### `index.html` - Meta Pixel
+### 3. `tailwind.config.ts`
 
-```javascript
-// De: window.addEventListener('load', function() { ... });
-// Para:
-(function() {
-  function initPixel() {
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1585747689119987');
-  }
-  if ('requestIdleCallback' in window) {
-    requestIdleCallback(initPixel, { timeout: 3000 });
-  } else {
-    setTimeout(initPixel, 2000);
-  }
-})();
-```
+Manter os nomes dos tokens para compatibilidade mas os valores virao do CSS. Nenhuma mudanca estrutural necessaria pois os tokens (`gold`, `burgundy`, etc.) ja referenciam variaveis CSS.
 
-### `index.html` - Font fallback
+### 4. `index.html` - CSS Critico
 
-Atualizar o CSS critico inline:
+Atualizar as cores inline para evitar flash:
 
 ```css
 body { 
-  background-color: hsl(0 0% 4%); 
-  color: hsl(45 29% 90%);
-  margin: 0;
-  font-family: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: hsl(0 0% 4%); /* mantem preto */
+  color: hsl(45 29% 90%); /* mantem creme */
 }
+```
+
+O background e foreground nao mudam, apenas as cores de acento.
+
+### 5. Componentes - Shimmer Effects
+
+Atualizar as referencias hardcoded de cor nos componentes:
+
+**QuizQuestion.tsx (linha 63, 104):**
+- Shimmer: `via-[hsl(43_70%_75%)/0.35]` -> `via-[hsl(0_70%_70%)/0.35]`
+- Selection ripple: `hsl(43 74% 53% / ...)` -> `hsl(0 80% 42% / ...)`
+
+**QuizLoading.tsx (linha 80, 130):**
+- Shimmer: `via-[hsl(43_70%_75%)/0.4]` -> `via-[hsl(0_70%_70%)/0.4]`
+- Glow effect classe `bg-gradient-gold` e `shadow-gold-lg` ja serao atualizados via CSS
+
+### 6. Sidebar Variables
+
+Atualizar tambem as variaveis de sidebar:
+```css
+--sidebar-primary: 0 80% 42%;
+--sidebar-primary-foreground: 0 0% 95%;
+--sidebar-ring: 0 80% 42%;
 ```
 
 ---
 
 ## O Que NAO Sera Alterado
 
-- Design visual, copy, estrutura do funil
-- Animacoes (framer-motion continua em chunk separado)
-- Eventos de rastreamento (Meta Pixel continua funcionando, apenas adiado)
+- Copy (nenhuma palavra)
+- Estrutura do funil e layout
+- Animacoes e transicoes
+- Eventos de rastreamento
+- Logica condicional
 - Responsividade
-- Logica condicional e navegacao do quiz
+- Performance
 
 ## Resultado Esperado
 
-- Bundle principal menor (~15-20KB a menos sem TooltipProvider)
-- Melhor paralelismo de download com chunk separado do router
-- Meta Pixel nao compete com recursos criticos
-- Font fallback imediato sem flash de texto invisivel
+- Paleta totalmente vermelha/crimson/preta substituindo o dourado
+- Coerencia visual com a identidade das imagens de referencia
+- Gradientes, sombras e brilhos em tons de vermelho
+- Sensacao premium, elegante e imersiva mantida
+- Nenhuma regressao funcional
