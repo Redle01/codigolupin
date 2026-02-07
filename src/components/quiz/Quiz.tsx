@@ -4,7 +4,9 @@ import { useFunnelMetrics, getOrCreateVisitorId } from "@/hooks/useFunnelMetrics
 import { useMetaPixel } from "@/hooks/useMetaPixel";
 import { quizConfig } from "@/lib/quizConfig";
 import { QuizLanding } from "./QuizLanding";
-import { AdminNavPanel } from "./AdminNavPanel";
+const AdminNavPanel = lazy(() =>
+  import("./AdminNavPanel").then(m => ({ default: m.AdminNavPanel }))
+);
 
 // Lazy load non-critical components
 const QuizQuestion = lazy(() => 
@@ -151,16 +153,17 @@ export function Quiz() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Admin navigation panel - only visible in internal environment */}
       {isInternal && (
-        <AdminNavPanel
-          currentStep={state.currentStep}
-          currentQuestion={state.currentQuestion}
-          currentResult={state.result}
-          onGoToStep={goToStep}
-          onSetResult={setResultDirect}
-          totalQuestions={questions.length}
-        />
+        <Suspense fallback={null}>
+          <AdminNavPanel
+            currentStep={state.currentStep}
+            currentQuestion={state.currentQuestion}
+            currentResult={state.result}
+            onGoToStep={goToStep}
+            onSetResult={setResultDirect}
+            totalQuestions={questions.length}
+          />
+        </Suspense>
       )}
 
       {state.currentStep === "landing" && (

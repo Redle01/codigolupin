@@ -84,7 +84,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.6 }}
-            className="bg-card/50 backdrop-blur-sm border border-border rounded-xl md:rounded-2xl p-5 md:p-8 mb-4 md:mb-6 w-full"
+            className="bg-card border border-border rounded-xl md:rounded-2xl p-5 md:p-8 mb-4 md:mb-6 w-full"
           >
             <h3 className="font-serif-display text-lg md:text-xl font-bold text-primary mb-3 md:mb-4">
               📋 Seu Resultado
@@ -99,7 +99,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.6 }}
-            className="bg-card/50 backdrop-blur-sm border border-border rounded-xl md:rounded-2xl p-5 md:p-8 mb-4 md:mb-6 w-full"
+            className="bg-card border border-border rounded-xl md:rounded-2xl p-5 md:p-8 mb-4 md:mb-6 w-full"
           >
             <h3 className="font-serif-display text-lg md:text-xl font-bold text-primary mb-3 md:mb-4">
               ✨ Seu Maior Potencial
@@ -129,7 +129,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.6 }}
-            className="bg-card/70 backdrop-blur-sm border-2 border-primary/50 rounded-xl md:rounded-2xl p-5 md:p-8 mb-5 md:mb-8 w-full"
+            className="bg-card border-2 border-primary/50 rounded-xl md:rounded-2xl p-5 md:p-8 mb-5 md:mb-8 w-full"
           >
             <p className="text-muted-foreground font-medium text-center text-sm md:text-base mb-3">
               {pricing.emoji} {pricing.label}

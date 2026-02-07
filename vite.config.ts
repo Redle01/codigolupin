@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => ({
     include: ["@tanstack/react-query"],
   },
   build: {
+    target: 'es2020',
+    cssMinify: 'lightningcss',
     rollupOptions: {
       output: {
         manualChunks: {

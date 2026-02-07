@@ -12,12 +12,6 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
     <LazyMotion features={domAnimation} strict>
       <div className="min-h-screen flex flex-col items-center justify-center px-5 py-8 md:px-4 md:py-8 relative">
 
-        {/* Decorative elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-32 md:w-64 h-32 md:h-64 bg-primary/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-48 md:w-96 h-48 md:h-96 bg-secondary/5 rounded-full blur-3xl" />
-        </div>
-
         <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
