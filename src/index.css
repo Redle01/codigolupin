@@ -18,43 +18,43 @@
     --popover: 0 0% 7%;
     --popover-foreground: 45 29% 90%;
 
-    --primary: 43 74% 53%;
-    --primary-foreground: 0 0% 4%;
+    --primary: 0 80% 42%;
+    --primary-foreground: 0 0% 95%;
 
-    --secondary: 348 56% 33%;
+    --secondary: 350 60% 25%;
     --secondary-foreground: 45 29% 90%;
 
     --muted: 0 0% 12%;
     --muted-foreground: 0 0% 60%;
 
-    --accent: 43 74% 53%;
-    --accent-foreground: 0 0% 4%;
+    --accent: 0 80% 42%;
+    --accent-foreground: 0 0% 95%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 0 0% 18%;
     --input: 0 0% 15%;
-    --ring: 43 74% 53%;
+    --ring: 0 80% 42%;
 
     --radius: 0.5rem;
 
     /* Custom Quiz Colors */
-    --gold: 43 74% 53%;
-    --gold-light: 43 74% 65%;
-    --gold-dark: 43 74% 40%;
-    --burgundy: 348 56% 33%;
-    --burgundy-light: 348 56% 45%;
+    --gold: 0 80% 42%;
+    --gold-light: 0 75% 55%;
+    --gold-dark: 0 85% 28%;
+    --burgundy: 350 60% 25%;
+    --burgundy-light: 350 55% 38%;
     --cream: 45 29% 90%;
 
     --sidebar-background: 0 0% 6%;
     --sidebar-foreground: 45 29% 90%;
-    --sidebar-primary: 43 74% 53%;
-    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-primary: 0 80% 42%;
+    --sidebar-primary-foreground: 0 0% 95%;
     --sidebar-accent: 0 0% 12%;
     --sidebar-accent-foreground: 45 29% 90%;
     --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 43 74% 53%;
+    --sidebar-ring: 0 80% 42%;
   }
 
   .dark {
@@ -67,33 +67,33 @@
     --popover: 0 0% 7%;
     --popover-foreground: 45 29% 90%;
 
-    --primary: 43 74% 53%;
-    --primary-foreground: 0 0% 4%;
+    --primary: 0 80% 42%;
+    --primary-foreground: 0 0% 95%;
 
-    --secondary: 348 56% 33%;
+    --secondary: 350 60% 25%;
     --secondary-foreground: 45 29% 90%;
 
     --muted: 0 0% 12%;
     --muted-foreground: 0 0% 60%;
 
-    --accent: 43 74% 53%;
-    --accent-foreground: 0 0% 4%;
+    --accent: 0 80% 42%;
+    --accent-foreground: 0 0% 95%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 0 0% 18%;
     --input: 0 0% 15%;
-    --ring: 43 74% 53%;
+    --ring: 0 80% 42%;
 
     --sidebar-background: 0 0% 6%;
     --sidebar-foreground: 45 29% 90%;
-    --sidebar-primary: 43 74% 53%;
-    --sidebar-primary-foreground: 0 0% 4%;
+    --sidebar-primary: 0 80% 42%;
+    --sidebar-primary-foreground: 0 0% 95%;
     --sidebar-accent: 0 0% 12%;
     --sidebar-accent-foreground: 45 29% 90%;
     --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 43 74% 53%;
+    --sidebar-ring: 0 80% 42%;
   }
 }
 
@@ -111,36 +111,36 @@
 @layer utilities {
 
   .text-gradient-gold {
-    @apply bg-gradient-to-r from-[hsl(var(--gold-light))] via-[hsl(var(--gold))] to-[hsl(var(--gold-dark))] bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-[hsl(0_75%_55%)] via-[hsl(0_80%_42%)] to-[hsl(0_85%_28%)] bg-clip-text text-transparent;
   }
 
   .bg-gradient-gold {
-    @apply bg-gradient-to-r from-[hsl(var(--gold-dark))] via-[hsl(var(--gold))] to-[hsl(var(--gold-light))];
+    @apply bg-gradient-to-r from-[hsl(0_85%_28%)] via-[hsl(0_80%_42%)] to-[hsl(0_75%_55%)];
   }
 
   .shadow-gold {
-    box-shadow: 0 4px 30px -5px hsl(var(--gold) / 0.3);
+    box-shadow: 0 4px 30px -5px hsl(0 80% 42% / 0.3);
   }
 
   .shadow-gold-lg {
-    box-shadow: 0 10px 50px -10px hsl(var(--gold) / 0.4);
+    box-shadow: 0 10px 50px -10px hsl(0 80% 42% / 0.4);
   }
 
-  /* Premium Lupin Progress Bar - Inspired by book cover */
+  /* Premium Lupin Progress Bar */
   .bg-gradient-lupin-progress {
     background: linear-gradient(
       90deg,
-      hsl(350 55% 38%) 0%,
-      hsl(355 50% 42%) 20%,
-      hsl(38 65% 48%) 50%,
-      hsl(43 70% 55%) 100%
+      hsl(350 60% 25%) 0%,
+      hsl(355 55% 35%) 20%,
+      hsl(0 75% 42%) 50%,
+      hsl(0 80% 50%) 100%
     );
   }
 
   .shadow-lupin-glow {
     box-shadow: 
-      0 0 8px hsl(43 70% 55% / 0.5),
-      0 0 20px hsl(350 55% 38% / 0.3);
+      0 0 8px hsl(0 80% 50% / 0.5),
+      0 0 20px hsl(350 60% 25% / 0.3);
   }
 
   /* Optimize button transitions */
