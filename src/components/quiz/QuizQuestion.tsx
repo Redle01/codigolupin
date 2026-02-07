@@ -60,7 +60,7 @@ export const QuizQuestion = memo(function QuizQuestion({
             >
               {/* Shimmer effect */}
               <m.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-[hsl(43_70%_75%)/0.35] to-transparent"
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-[hsl(0_70%_70%)/0.35] to-transparent"
                 animate={{ x: ["-100%", "200%"] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
               />
@@ -100,9 +100,9 @@ export const QuizQuestion = memo(function QuizQuestion({
                         whileTap={{ scale: 0.98 }}
                         animate={isJustSelected ? {
                           boxShadow: [
-                            "0 0 0 0 hsl(43 74% 53% / 0)",
-                            "0 0 0 12px hsl(43 74% 53% / 0.25)",
-                            "0 0 0 0 hsl(43 74% 53% / 0)",
+                            "0 0 0 0 hsl(0 80% 42% / 0)",
+                            "0 0 0 12px hsl(0 80% 42% / 0.25)",
+                            "0 0 0 0 hsl(0 80% 42% / 0)",
                           ],
                         } : {}}
                         transition={{ duration: 0.5 }}
