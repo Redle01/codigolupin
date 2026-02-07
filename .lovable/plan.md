@@ -1,151 +1,130 @@
 
-# Plano: Correcoes e Otimizacoes nas Paginas de Resultado e Questoes
+# Plano: Otimizacao de Performance - Fase Final
 
-## Resumo das Alteracoes
+## Estado Atual
 
-8 modificacoes agrupadas em 3 arquivos principais, mais a copia do novo mockup.
-
----
-
-## Arquivos a Modificar
-
-| Arquivo | Alteracao |
-|---------|-----------|
-| `src/lib/quizConfig.ts` | Corrigir typo Q1, atualizar valores Q7, bonus sem "Valor", pricing condicional |
-| `src/components/quiz/QuizResult.tsx` | Novo mockup .webp, CTA responsivo, layout oferta com hierarquia visual, pricing condicional |
-| `public/images/mockup-checkout.webp` | Copiar novo mockup do upload |
+O projeto ja possui otimizacoes solidas: code splitting, lazy loading, CSS critico inline, font preloading com swap, Meta Pixel deferido, chunks manuais, e Supabase lazy. As oportunidades restantes sao incrementais mas cumulativas.
 
 ---
 
-## 1. Correcao ortografica - Q1 opcao D (quizConfig.ts, linha 50)
+## Alteracoes Identificadas
 
-```
-"mysteriosamente" -> "misteriosamente"
-```
+| Arquivo | Alteracao | Impacto |
+|---------|-----------|---------|
+| `src/App.css` | Remover arquivo inteiro (nao utilizado, Vite boilerplate) | Elimina CSS morto do bundle |
+| `src/index.css` | Remover `will-change: transform` global em buttons | Reduz consumo de memoria GPU (applied a TODOS os buttons) |
+| `src/index.css` | Remover `.dark {}` duplicado (identico ao `:root`) | ~40 linhas de CSS eliminadas |
+| `src/components/quiz/QuizResult.tsx` | Remover `backdrop-blur-sm` dos cards (custo GPU alto em mobile, fundo ja e opaco/escuro) | Melhora fluidez de scroll e animacoes no resultado |
+| `src/components/quiz/QuizLanding.tsx` | Remover divs decorativas com blur (2 `blur-3xl` no background, invisíveis sobre fundo preto) | Elimina 2 camadas GPU desnecessarias |
+| `index.html` | Remover preconnect ao Supabase (SDK e lazy loaded, conexao nao e necessaria no carregamento inicial) | Libera 1 conexao TCP/TLS antecipada |
+| `vite.config.ts` | Adicionar `build.target: 'es2020'` para output mais leve, `cssMinify: 'lightningcss'` para CSS menor | Bundle JS e CSS ligeiramente menores |
+| `src/components/quiz/Quiz.tsx` | Lazy load AdminNavPanel (so carrega em ambiente interno) | Elimina ~3KB do bundle de producao |
 
-## 2. Valores monetarios da Q7 (quizConfig.ts, linhas 107-110)
+---
 
-Ajustar para faixa R$ 50-100:
+## Detalhes Tecnicos
 
-```typescript
-{ id: "a", text: "Até R$ 50 - o mínimo possível", ... }
-{ id: "b", text: "Entre R$ 50 e R$ 70 - algo acessível", ... }
-{ id: "c", text: "Entre R$ 70 e R$ 100 - se realmente funcionar", ... }
-{ id: "d", text: "Mais de R$ 100 - resultado vale qualquer investimento", ... }
-```
+### 1. Remover `src/App.css`
 
-## 3. Remover "Valor:" dos bonus e aplicar risco visual (quizConfig.ts)
+Este arquivo e o boilerplate padrao do Vite (`.logo`, `.card`, `.read-the-docs`) e nao e usado por nenhum componente do funil. E importado implicitamente mas nao referenciado. Verificar se ha import em `main.tsx` - nao ha, apenas `index.css` e importado. O arquivo pode ser removido com seguranca.
 
-De:
-```typescript
-flow1: {
-  primary: '🎁 "12 Técnicas de Conversação que Hipnotizam Mulheres"',
-  secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher" (Valor: R$ 67)',
-},
-flow2: {
-  primary: '🎁 "As Confissões de Arsène Lupin" (Valor: R$ 97)',
-  secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher" (Valor: R$ 67)',
-},
-```
+### 2. `src/index.css` - Remover will-change global e .dark duplicado
 
-Para: Remover "(Valor: R$ XX)" dos textos e mover os precos para campos separados para renderizar com `<s>` (risco visual) no componente.
+```css
+/* REMOVER - will-change em TODOS os buttons consome GPU desnecessariamente */
+button {
+  will-change: transform;
+}
 
-Nova estrutura:
-```typescript
-flow1: {
-  primary: '🎁 "12 Técnicas de Conversação que Hipnotizam Mulheres"',
-  primaryPrice: null,
-  secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher"',
-  secondaryPrice: 'R$ 67',
-},
-flow2: {
-  primary: '🎁 "As Confissões de Arsène Lupin"',
-  primaryPrice: 'R$ 97',
-  secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher"',
-  secondaryPrice: 'R$ 67',
-},
+/* REMOVER - bloco .dark {} inteiro (linhas 60-97) - identico ao :root */
 ```
 
-## 4. Pricing condicional por fluxo (quizConfig.ts)
+O bloco `.dark` e uma copia exata do `:root`. Como o site so tem um tema (escuro), o `:root` ja aplica os valores corretos. Remover o `.dark` elimina ~40 linhas de CSS processado.
 
-Alterar `pricing` de string unica para objeto por fluxo:
-
-```typescript
-pricing: {
-  flow1: { emoji: "🔥", label: "OFERTA ESPECIAL para seu perfil:", installments: "9x", currency: "R$", amount: "6", cents: ",18" },
-  flow2: { emoji: "🔥", label: "OFERTA ESPECIAL para seu perfil:", installments: "12x", currency: "R$", amount: "10", cents: ",03" },
-},
-```
-
-## 5. Layout da oferta especial com hierarquia visual (QuizResult.tsx)
-
-Renderizar o pricing conforme a imagem de referencia:
-- "12x" ou "9x" em tamanho menor
-- "R$" em tamanho medio
-- Valor principal (ex: "10") em tamanho grande e bold
-- Centavos (",03") em tamanho menor, posicionados como superscript
+### 3. `src/components/quiz/QuizResult.tsx` - Remover backdrop-blur
 
 ```tsx
-<div className="flex items-center justify-center gap-1">
-  <span className="text-muted-foreground text-sm md:text-base">{pricing.installments}</span>
-  <span className="text-primary text-lg md:text-xl font-bold">{pricing.currency}</span>
-  <span className="text-primary text-4xl md:text-5xl font-bold leading-none">{pricing.amount}</span>
-  <span className="text-primary text-lg md:text-xl font-bold self-start mt-1">{pricing.cents}</span>
+// De:
+className="bg-card/50 backdrop-blur-sm border..."
+// Para:
+className="bg-card border..."
+```
+
+`backdrop-blur-sm` forca composicao GPU em cada card. Como o fundo e preto solido, o blur nao tem efeito visual perceptivel. Trocar `bg-card/50` por `bg-card` (sem transparencia) elimina a necessidade de composicao.
+
+### 4. `src/components/quiz/QuizLanding.tsx` - Remover blurs decorativos
+
+```tsx
+// REMOVER este bloco inteiro (linhas 18-21):
+<div className="absolute inset-0 overflow-hidden pointer-events-none">
+  <div className="absolute top-1/4 left-1/4 w-32 md:w-64 h-32 md:h-64 bg-primary/5 rounded-full blur-3xl" />
+  <div className="absolute bottom-1/4 right-1/4 w-48 md:w-96 h-48 md:h-96 bg-secondary/5 rounded-full blur-3xl" />
 </div>
 ```
 
-## 6. Bonus com risco visual nos precos (QuizResult.tsx)
+Estes elementos tem `opacity 5%` sobre fundo preto - praticamente invisiveis. Cada `blur-3xl` cria uma camada de composicao GPU pesada. Remover nao altera o visual mas melhora significativamente a performance em dispositivos moveis.
 
-Renderizar os precos dos bonus com `<s>` (strikethrough):
+### 5. `index.html` - Remover preconnect Supabase
 
-```tsx
-<li className="text-foreground text-sm md:text-base">
-  {bonuses.primary}
-  {bonuses.primaryPrice && <s className="text-muted-foreground ml-1">{bonuses.primaryPrice}</s>}
-</li>
+```html
+<!-- REMOVER - Supabase e lazy loaded, conexao antecipada desperdicada -->
+<link rel="preconnect" href="https://enbhyeddogbocxgttkkd.supabase.co" crossorigin />
 ```
 
-## 7. CTA responsivo no mobile (QuizResult.tsx)
+Como o SDK do Supabase so e carregado via `import()` dinamico quando o usuario submete email (depois de Q5), o preconnect antecipa uma conexao TCP/TLS que nao sera usada por varios minutos. Essa conexao TCP e descartada pelo browser apos ~10s, tornando-se desperdicio.
 
-Atualizar o botao CTA para permitir quebra de linha:
+### 6. `vite.config.ts` - Build target e CSS minification
 
-```tsx
-<Button
-  className="w-full h-auto min-h-[3.5rem] md:min-h-[4rem] py-3 md:py-4 px-4 md:px-6 bg-gradient-gold text-primary-foreground font-bold text-xs sm:text-sm md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02] group leading-tight whitespace-normal text-center"
->
+```typescript
+build: {
+  target: 'es2020',
+  cssMinify: 'lightningcss',
+  rollupOptions: {
+    output: {
+      manualChunks: {
+        'vendor-supabase': ['@supabase/supabase-js'],
+        'vendor-framer': ['framer-motion'],
+        'vendor-react-query': ['@tanstack/react-query'],
+        'vendor-router': ['react-router-dom'],
+      }
+    }
+  }
+}
 ```
 
-Alteracoes:
-- `whitespace-normal` (permite quebra de linha)
-- `text-center` (centraliza texto quebrado)
-- `text-xs sm:text-sm` (reduz ligeiramente no mobile extremo)
+`es2020` permite output mais compacto (optional chaining nativo, nullish coalescing). `lightningcss` e um minificador CSS mais eficiente que o padrao.
 
-## 8. Novo mockup .webp (arquivo + QuizResult.tsx)
+### 7. `src/components/quiz/Quiz.tsx` - Lazy load AdminNavPanel
 
-- Copiar `user-uploads://Mockup_webp.webp` para `public/images/mockup-checkout.webp`
-- Atualizar referencia no componente de `.png` para `.webp`
-- Manter `loading="lazy"`
+```tsx
+// De:
+import { AdminNavPanel } from "./AdminNavPanel";
+
+// Para:
+const AdminNavPanel = lazy(() =>
+  import("./AdminNavPanel").then(m => ({ default: m.AdminNavPanel }))
+);
+```
+
+O AdminNavPanel so e renderizado em ambiente interno (`isInternal`). Em producao, nunca e montado, mas o codigo ainda e incluido no bundle. Com lazy load, o chunk so e baixado quando necessario.
 
 ---
 
 ## O Que NAO Sera Alterado
 
-- Estrutura do funil e navegacao
-- Copy fora dos pontos especificados
-- Animacoes e transicoes
-- Eventos de rastreamento (Meta Pixel)
-- Logica de pontuacao e perfis
-- Design geral e responsividade (exceto CTA mobile)
-- Performance
-
----
+- Design visual (os blurs removidos sao invisiveis a olho nu)
+- Copy, estrutura, layout
+- Animacoes do framer-motion
+- Eventos de rastreamento (Meta Pixel, funnel metrics)
+- Logica condicional e navegacao
+- Responsividade
+- Integracao com Supabase
 
 ## Resultado Esperado
 
-- Typo corrigido na Q1
-- CTAs visiveis e legíveis em todos os dispositivos mobile
-- Mockup mais leve em .webp
-- Bonus sem "Valor:", com risco visual nos precos
-- Oferta especial com hierarquia visual clara (valor grande, parcelas pequenas)
-- Pricing condicional: flow 1 = "9x de R$ 6,18", flow 2 = "12x de R$ 10,03"
-- Valores da Q7 ajustados para faixa R$ 50-100
+- Bundle CSS ~40 linhas menor (remocao de .dark duplicado + App.css)
+- Menos camadas GPU em mobile (remocao de blur-3xl e backdrop-blur)
+- Bundle JS de producao menor (~3KB menos sem AdminNavPanel inline)
+- Conexao TCP/TLS liberada (remocao de preconnect nao utilizado)
+- Output JS mais compacto com target es2020
+- Transicoes e scroll mais fluidos na pagina de resultado
