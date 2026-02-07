@@ -29,13 +29,20 @@ export const quizConfig = {
 export const bonusConfig = {
   flow1: {
     primary: '🎁 "12 Técnicas de Conversação que Hipnotizam Mulheres"',
-    secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher" (Valor: R$ 67)',
+    primaryPrice: null as string | null,
+    secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher"',
+    secondaryPrice: 'R$ 67',
   },
   flow2: {
-    primary: '🎁 "As Confissões de Arsène Lupin" (Valor: R$ 97)',
-    secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher" (Valor: R$ 67)',
+    primary: '🎁 "As Confissões de Arsène Lupin"',
+    primaryPrice: 'R$ 97',
+    secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher"',
+    secondaryPrice: 'R$ 67',
   },
-  pricing: "🔥 OFERTA ESPECIAL para seu perfil: 12x de R$ 10,03",
+  pricing: {
+    flow1: { emoji: "🔥", label: "OFERTA ESPECIAL para seu perfil:", installments: "9x", currency: "R$", amount: "6", cents: ",18" },
+    flow2: { emoji: "🔥", label: "OFERTA ESPECIAL para seu perfil:", installments: "12x", currency: "R$", amount: "10", cents: ",03" },
+  },
 };
 
 // Quiz Questions Data
@@ -47,7 +54,7 @@ export const quizQuestions = [
       { id: "a", text: "Ver caras \"inferiores\" conquistando mulheres que você nem consegue abordar", points: { gentleman: 3, estrategista: 2, diamante: 0, guerreiro: 1 } },
       { id: "b", text: "Ser sempre o \"confidente\" que escuta sobre outros homens", points: { gentleman: 3, estrategista: 1, diamante: 0, guerreiro: 1 } },
       { id: "c", text: "Mulheres te elogiarem como \"homem ideal\" mas nunca se interessarem sexualmente", points: { gentleman: 2, estrategista: 1, diamante: 2, guerreiro: 2 } },
-      { id: "d", text: "Conseguir números e conversas, mas elas sempre \"esfriam\" mysteriosamente", points: { gentleman: 1, estrategista: 3, diamante: 2, guerreiro: 0 } },
+      { id: "d", text: "Conseguir números e conversas, mas elas sempre \"esfriam\" misteriosamente", points: { gentleman: 1, estrategista: 3, diamante: 2, guerreiro: 0 } },
     ],
   },
   {
@@ -105,9 +112,9 @@ export const quizQuestions = [
     question: "Para resolver definitivamente sua vida romântica, quanto você investiria?",
     options: [
       { id: "a", text: "Até R$ 50 - o mínimo possível", points: { gentleman: 1, estrategista: 1, diamante: 1, guerreiro: 1 } },
-      { id: "b", text: "Entre R$ 50 e R$ 100 - algo acessível", points: { gentleman: 2, estrategista: 2, diamante: 2, guerreiro: 2 } },
-      { id: "c", text: "Entre R$ 100 e R$ 150 - se realmente funcionar", points: { gentleman: 2, estrategista: 2, diamante: 2, guerreiro: 2 } },
-      { id: "d", text: "Mais de R$ 150 - resultado vale qualquer investimento", points: { gentleman: 3, estrategista: 3, diamante: 3, guerreiro: 3 } },
+      { id: "b", text: "Entre R$ 50 e R$ 70 - algo acessível", points: { gentleman: 2, estrategista: 2, diamante: 2, guerreiro: 2 } },
+      { id: "c", text: "Entre R$ 70 e R$ 100 - se realmente funcionar", points: { gentleman: 2, estrategista: 2, diamante: 2, guerreiro: 2 } },
+      { id: "d", text: "Mais de R$ 100 - resultado vale qualquer investimento", points: { gentleman: 3, estrategista: 3, diamante: 3, guerreiro: 3 } },
     ],
   },
   {

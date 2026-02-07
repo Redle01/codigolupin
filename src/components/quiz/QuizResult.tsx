@@ -21,9 +21,10 @@ const iconMap: Record<ResultType, React.ReactNode> = {
 export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFlow }: QuizResultProps) {
   const { trackInitiateCheckout } = useMetaPixel();
   
-  // Determina os bônus baseado no fluxo (Q7)
+  // Determina os bônus e pricing baseado no fluxo (Q7)
   const flow = offerFlow || 2; // Default para flow 2 se não definido
   const bonuses = flow === 1 ? bonusConfig.flow1 : bonusConfig.flow2;
+  const pricing = flow === 1 ? bonusConfig.pricing.flow1 : bonusConfig.pricing.flow2;
 
   // Handler que dispara InitiateCheckout antes do redirect
   const handleCheckoutClick = () => {
@@ -130,17 +131,25 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             transition={{ delay: 0.8, duration: 0.6 }}
             className="bg-card/70 backdrop-blur-sm border-2 border-primary/50 rounded-xl md:rounded-2xl p-5 md:p-8 mb-5 md:mb-8 w-full"
           >
-            <p className="text-primary font-bold text-center text-base md:text-lg mb-4">
-              {bonusConfig.pricing}
+            <p className="text-muted-foreground font-medium text-center text-sm md:text-base mb-3">
+              {pricing.emoji} {pricing.label}
             </p>
+            <div className="flex items-center justify-center gap-1 mb-4">
+              <span className="text-muted-foreground text-sm md:text-base">{pricing.installments}</span>
+              <span className="text-primary text-lg md:text-xl font-bold">{pricing.currency}</span>
+              <span className="text-primary text-4xl md:text-5xl font-bold leading-none">{pricing.amount}</span>
+              <span className="text-primary text-lg md:text-xl font-bold self-start mt-1">{pricing.cents}</span>
+            </div>
             
             <p className="text-muted-foreground text-sm md:text-sm mb-3">Bônus Inclusos:</p>
             <ul className="space-y-2">
               <li className="text-foreground text-sm md:text-base">
                 {bonuses.primary}
+                {bonuses.primaryPrice && <s className="text-muted-foreground ml-1">{bonuses.primaryPrice}</s>}
               </li>
               <li className="text-foreground text-sm md:text-base">
                 {bonuses.secondary}
+                {bonuses.secondaryPrice && <s className="text-muted-foreground ml-1">{bonuses.secondaryPrice}</s>}
               </li>
             </ul>
           </m.div>
@@ -153,7 +162,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             className="w-full mb-5 md:mb-8"
           >
             <img
-              src="/images/mockup-checkout.png"
+              src="/images/mockup-checkout.webp"
               alt="O que você vai receber"
               className="w-full max-w-md mx-auto h-auto object-contain"
               loading="lazy"
@@ -170,7 +179,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             <Button
               onClick={handleCheckoutClick}
               size="lg"
-              className="w-full h-auto min-h-[3.5rem] md:min-h-[4rem] py-3 md:py-4 px-4 md:px-6 bg-gradient-gold text-primary-foreground font-bold text-sm sm:text-base md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02] group leading-tight"
+              className="w-full h-auto min-h-[3.5rem] md:min-h-[4rem] py-3 md:py-4 px-4 md:px-6 bg-gradient-gold text-primary-foreground font-bold text-xs sm:text-sm md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02] group leading-tight whitespace-normal text-center"
             >
               {result.ctaText}
               <ArrowRight className="w-5 h-5 md:w-5 md:h-5 ml-2 shrink-0 group-hover:translate-x-1 transition-transform" />
