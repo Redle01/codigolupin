@@ -1,20 +1,20 @@
 
 
-# Remover "Seu Tipo de Magnetismo" e icone/coroa dos resultados
+# Ajustar headline da landing page
 
-## Arquivo
+## Alteracao
 
-`src/components/quiz/QuizResult.tsx`
+**Arquivo:** `src/components/quiz/QuizLanding.tsx` (linha 30)
 
-## Alteracoes
+Trocar:
+```
+Por Que Algumas Mulheres Te Veem Apenas Como
+```
 
-1. **Remover o bloco do icone/coroa** (linhas 49-67): O `m.div` que contem o circulo com o icone (Crown/Brain/Gem/Shield) e o efeito Sparkles sera removido inteiramente.
+Por:
+```
+Por Que Mulheres Te Veem Apenas Como
+```
 
-2. **Remover a linha "Seu Tipo de Magnetismo"** (linha 75-77): O `<p>` com o texto "Seu Tipo de Magnetismo" sera removido.
-
-3. **Remover imports nao utilizados**: `Crown`, `Brain`, `Gem`, `Shield`, `Sparkles` e o mapa `iconMap` serao removidos, ja que nao terao mais uso.
-
-4. **Remover import de `ResultType`** da interface, caso deixe de ser necessario para o `iconMap`.
-
-O titulo do resultado, percentual, e todo o restante da pagina permanecem inalterados.
+Nenhuma outra alteracao necessaria.
 
