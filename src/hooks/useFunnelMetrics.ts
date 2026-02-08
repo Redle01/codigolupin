@@ -12,6 +12,7 @@ const VISITOR_ID_KEY = "quiz_visitor_id";
 export interface FunnelMetrics {
   totalVisits: number;
   pageViews: {
+    link_click: number;
     landing: number;
     question1: number;
     question2: number;
@@ -19,9 +20,9 @@ export interface FunnelMetrics {
     question4: number;
     question5: number;
     question6: number;
-    email: number;
     question7: number;
     question8: number;
+    email: number;
     result: number;
   };
   uniqueVisitors: number;
@@ -31,6 +32,7 @@ export interface FunnelMetrics {
 const defaultMetrics: FunnelMetrics = {
   totalVisits: 0,
   pageViews: {
+    link_click: 0,
     landing: 0,
     question1: 0,
     question2: 0,
@@ -38,9 +40,9 @@ const defaultMetrics: FunnelMetrics = {
     question4: 0,
     question5: 0,
     question6: 0,
-    email: 0,
     question7: 0,
     question8: 0,
+    email: 0,
     result: 0,
   },
   uniqueVisitors: 0,

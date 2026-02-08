@@ -57,6 +57,20 @@
     <meta property="og:description" content="Descubra seu perfil de sedução e transforme sua vida amorosa">
     <meta name="twitter:description" content="Descubra seu perfil de sedução e transforme sua vida amorosa">
 
+    <!-- Link Click Tracking - Ultra-light, fire-and-forget -->
+    <script>
+    (function(){
+      if(sessionStorage.getItem('lc_tracked'))return;
+      var o=location.origin;
+      if(/localhost|127\.0\.0\.1|lovable\.dev|id-preview--/.test(o))return;
+      var vid=localStorage.getItem('quiz_visitor_id');
+      if(!vid){vid='v_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);localStorage.setItem('quiz_visitor_id',vid);}
+      navigator.sendBeacon('https://enbhyeddogbocxgttkkd.supabase.co/functions/v1/quiz-metrics',
+        JSON.stringify({action:'track',visitor_id:vid,page_key:'link_click'}));
+      sessionStorage.setItem('lc_tracked','1');
+    })();
+    </script>
+
     <!-- Meta Pixel Code - Deferred for performance -->
     <script>
     (function() {
