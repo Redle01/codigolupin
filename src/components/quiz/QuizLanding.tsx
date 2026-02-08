@@ -72,15 +72,15 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.5 }}
-            className="flex items-center justify-center gap-3 mt-5 md:mt-6"
+            className="flex items-center justify-center gap-2 md:gap-3 mt-5 md:mt-6"
           >
-            <div className="flex -space-x-3">
-              <img src="/images/avatar-1.webp" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
-              <img src="/images/avatar-2.webp" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
-              <img src="/images/avatar-3.webp" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
-              <img src="/images/avatar-4.webp" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
+            <div className="flex -space-x-2.5 md:-space-x-3 shrink-0">
+              <img src="/images/avatar-1.webp" alt="" className="w-6 h-6 md:w-9 md:h-9 rounded-full border-[1.5px] md:border-2 border-background object-cover object-top" loading="lazy" />
+              <img src="/images/avatar-2.webp" alt="" className="w-6 h-6 md:w-9 md:h-9 rounded-full border-[1.5px] md:border-2 border-background object-cover object-top" loading="lazy" />
+              <img src="/images/avatar-3.webp" alt="" className="w-6 h-6 md:w-9 md:h-9 rounded-full border-[1.5px] md:border-2 border-background object-cover object-top" loading="lazy" />
+              <img src="/images/avatar-4.webp" alt="" className="w-6 h-6 md:w-9 md:h-9 rounded-full border-[1.5px] md:border-2 border-background object-cover object-top" loading="lazy" />
             </div>
-            <span className="text-xs md:text-sm text-muted-foreground">
+            <span className="text-[11px] md:text-sm text-muted-foreground leading-tight">
               <span className="text-primary font-semibold">
                 {totalParticipants.toLocaleString("pt-BR")}
               </span>{" "}
