@@ -103,15 +103,10 @@ export function useQuiz() {
         offerFlow = getOfferFlow(newAnswers);
       }
       
-      // After question 6 (index 5), show email capture
-      if (nextQuestion === 6) {
-        return { ...prev, answers: newAnswers, offerFlow, currentStep: "email" };
-      }
-      
-      // If all questions answered, show loading then result
+      // If all questions answered, go to email capture
       if (nextQuestion >= quizQuestions.length) {
         const result = calculateResult(newAnswers);
-        return { ...prev, answers: newAnswers, offerFlow, result, currentStep: "loading" };
+        return { ...prev, answers: newAnswers, offerFlow, result, currentStep: "email" };
       }
       
       return { ...prev, answers: newAnswers, offerFlow, currentQuestion: nextQuestion };
@@ -123,11 +118,15 @@ export function useQuiz() {
   }, []);
 
   const continueAfterEmail = useCallback(() => {
-    setState((prev) => ({ ...prev, currentStep: "questions", currentQuestion: 6 }));
+    setState((prev) => ({ ...prev, currentStep: "loading" }));
   }, []);
 
   const goBack = useCallback(() => {
     setState((prev) => {
+      if (prev.currentStep === "email") {
+        // Return to last question (Q8, index 7)
+        return { ...prev, currentStep: "questions", currentQuestion: quizQuestions.length - 1 };
+      }
       if (prev.currentQuestion > 0) {
         return { ...prev, currentQuestion: prev.currentQuestion - 1 };
       }
