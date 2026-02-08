@@ -38,7 +38,6 @@ interface FunnelStep {
 }
 
 const funnelSteps: FunnelStep[] = [
-  { key: "link_click", label: "Cliques no Link", shortLabel: "Link", group: "pre-start" },
   { key: "landing", label: "Início", shortLabel: "Início", group: "start" },
   { key: "question1", label: "Pergunta 1", shortLabel: "Q1", group: "questions" },
   { key: "question2", label: "Pergunta 2", shortLabel: "Q2", group: "questions" },
@@ -188,7 +187,7 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
   });
 
   // Group steps
-  const preEmailSteps = funnelSteps.filter(s => s.group === "pre-start" || s.group === "start" || s.group === "questions");
+  const preEmailSteps = funnelSteps.filter(s => s.group === "start" || s.group === "questions");
   const emailStep = funnelSteps.find(s => s.group === "email")!;
   const postEmailSteps = funnelSteps.filter(s => s.group === "result");
 
