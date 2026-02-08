@@ -44,9 +44,9 @@ const funnelSteps: FunnelStep[] = [
   { key: "question4", label: "Pergunta 4", shortLabel: "Q4", group: "questions" },
   { key: "question5", label: "Pergunta 5", shortLabel: "Q5", group: "questions" },
   { key: "question6", label: "Pergunta 6", shortLabel: "Q6", group: "questions" },
+  { key: "question7", label: "Pergunta 7", shortLabel: "Q7", group: "questions" },
+  { key: "question8", label: "Pergunta 8", shortLabel: "Q8", group: "questions" },
   { key: "email", label: "Captura Email", shortLabel: "Email", group: "email" },
-  { key: "question7", label: "Pergunta 7", shortLabel: "Q7", group: "post-email" },
-  { key: "question8", label: "Pergunta 8", shortLabel: "Q8", group: "post-email" },
   { key: "result", label: "Resultado", shortLabel: "Resultado", group: "result" },
 ];
 
