@@ -1,8 +1,8 @@
 import { memo } from "react";
 import { LazyMotion, domAnimation, m } from "framer-motion";
-import { Crown, Brain, Gem, Shield, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ResultType, ResultData, bonusConfig } from "@/lib/quizConfig";
+import { ResultData, bonusConfig } from "@/lib/quizConfig";
 import { useMetaPixel } from "@/hooks/useMetaPixel";
 
 interface QuizResultProps {
@@ -10,13 +10,6 @@ interface QuizResultProps {
   onCheckout: () => void;
   offerFlow: 1 | 2 | null;
 }
-
-const iconMap: Record<ResultType, React.ReactNode> = {
-  gentleman: <Crown className="w-12 h-12" />,
-  estrategista: <Brain className="w-12 h-12" />,
-  diamante: <Gem className="w-12 h-12" />,
-  guerreiro: <Shield className="w-12 h-12" />,
-};
 
 export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFlow }: QuizResultProps) {
   const { trackInitiateCheckout } = useMetaPixel();
@@ -39,28 +32,6 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
     <LazyMotion features={domAnimation} strict>
       <div className="min-h-screen flex flex-col px-4 py-6 md:px-4 md:py-8 overflow-y-auto relative">
         <div className="flex-1 flex flex-col items-center justify-start md:justify-center max-w-3xl mx-auto w-full relative z-10">
-          {/* Celebration animation */}
-          <m.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-            className="relative mb-5 md:mb-8"
-          >
-            <div className="inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-primary/30 to-primary/10 border-2 border-primary/50">
-              <span className="text-primary [&>svg]:w-10 [&>svg]:h-10 md:[&>svg]:w-12 md:[&>svg]:h-12">{iconMap[result.type]}</span>
-            </div>
-            
-            {/* Sparkle effects */}
-            <m.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="absolute -top-1 -right-1 md:-top-2 md:-right-2"
-            >
-              <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-primary animate-pulse" />
-            </m.div>
-          </m.div>
-
           {/* Result reveal */}
           <m.div
             initial={{ opacity: 0, y: 20 }}
@@ -68,9 +39,6 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             transition={{ delay: 0.3, duration: 0.6 }}
             className="text-center mb-5 md:mb-8"
           >
-            <p className="text-primary text-xs md:text-sm font-medium mb-2 md:mb-2 uppercase tracking-wider">
-              Seu Tipo de Magnetismo
-            </p>
             <h1 className="font-serif-display text-2xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4">
               <span className="text-gradient-gold">{result.title}</span>
             </h1>
