@@ -1,5 +1,5 @@
 import { LazyMotion, domAnimation, m } from "framer-motion";
-import { ArrowRight, Users } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface QuizLandingProps {
@@ -72,10 +72,15 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.5 }}
-            className="flex items-center justify-center gap-2 mt-5 md:mt-6 text-muted-foreground"
+            className="flex items-center justify-center gap-3 mt-5 md:mt-6"
           >
-            <Users className="w-4 h-4 md:w-4 md:h-4" />
-            <span className="text-xs md:text-sm">
+            <div className="flex -space-x-3">
+              <img src="/images/avatar-1.webp" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
+              <img src="/images/avatar-2.webp" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
+              <img src="/images/avatar-3.webp" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
+              <img src="/images/avatar-4.jpg" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
+            </div>
+            <span className="text-xs md:text-sm text-muted-foreground">
               <span className="text-primary font-semibold">
                 {totalParticipants.toLocaleString("pt-BR")}
               </span>{" "}
