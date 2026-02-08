@@ -25,7 +25,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             transition={{ delay: 0.15, duration: 0.5 }}
             className="text-[22px] md:text-3xl lg:text-4xl font-bold mb-4 md:mb-5 leading-snug md:leading-tight px-2 md:px-0"
           >
-            <span className="text-foreground">Por Que Algumas Mulheres Te Veem Apenas Como </span>
+            <span className="text-foreground">Por Que Mulheres Te Veem Apenas Como </span>
             <span className="text-gradient-gold">"Amigo"</span>
             <span className="text-foreground">?</span>
           </m.h1>
