@@ -17,7 +17,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Loader2, Shield, ShieldAlert, BarChart3, LayoutDashboard, Users, RefreshCw, Eye } from "lucide-react";
+import { LogOut, Loader2, Shield, ShieldAlert, BarChart3, LayoutDashboard, Users, RefreshCw, Eye, RotateCcw } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -295,14 +306,31 @@ export default function Admin() {
                       endDate={dateRange.endDate}
                       onDateChange={handleDateChange}
                     />
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => resetMetrics()}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      Resetar
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-destructive hover:text-destructive"
+                        >
+                          Resetar
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Deseja realmente resetar todas as métricas do funil?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação irá zerar todos os dados de métricas. Os dados não podem ser recuperados.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => resetMetrics()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Confirmar Reset
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               </CardHeader>

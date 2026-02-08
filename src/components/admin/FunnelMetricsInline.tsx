@@ -9,7 +9,8 @@ import {
   Mail, 
   ChevronRight, 
   ArrowDown,
-  BarChart3
+  BarChart3,
+  MousePointerClick
 } from "lucide-react";
 import { FunnelMetrics as FunnelMetricsType } from "@/hooks/useFunnelMetrics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,10 +34,11 @@ interface FunnelStep {
   key: keyof FunnelMetricsType["pageViews"];
   label: string;
   shortLabel: string;
-  group: "start" | "questions" | "email" | "post-email" | "result";
+  group: "pre-start" | "start" | "questions" | "email" | "result";
 }
 
 const funnelSteps: FunnelStep[] = [
+  { key: "link_click", label: "Cliques no Link", shortLabel: "Link", group: "pre-start" },
   { key: "landing", label: "Início", shortLabel: "Início", group: "start" },
   { key: "question1", label: "Pergunta 1", shortLabel: "Q1", group: "questions" },
   { key: "question2", label: "Pergunta 2", shortLabel: "Q2", group: "questions" },
@@ -186,15 +188,27 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
   });
 
   // Group steps
-  const preEmailSteps = funnelSteps.filter(s => s.group === "start" || s.group === "questions");
+  const preEmailSteps = funnelSteps.filter(s => s.group === "pre-start" || s.group === "start" || s.group === "questions");
   const emailStep = funnelSteps.find(s => s.group === "email")!;
-  const postEmailSteps = funnelSteps.filter(s => s.group === "post-email" || s.group === "result");
+  const postEmailSteps = funnelSteps.filter(s => s.group === "result");
 
   return (
     <div className="space-y-6">
       {/* Quick Metrics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4">
-        {/* Entrada no Funil */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 lg:gap-4">
+        {/* Cliques no Link */}
+        <Card className="relative overflow-hidden">
+          <CardContent className="p-5 relative">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-muted-foreground">Cliques no Link</span>
+              <MousePointerClick className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-3xl font-bold tracking-tight">{(metrics.pageViews.link_click || 0).toLocaleString("pt-BR")}</p>
+            <p className="text-xs text-muted-foreground mt-1">intenção de entrada</p>
+          </CardContent>
+        </Card>
+
+        {/* Entradas (página carregada) */}
         <Card className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
           <CardContent className="p-5 relative">
@@ -203,7 +217,7 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
               <Users className="h-5 w-5 text-primary" />
             </div>
             <p className="text-3xl font-bold tracking-tight">{metrics.totalVisits.toLocaleString("pt-BR")}</p>
-            <p className="text-xs text-muted-foreground mt-1">{metrics.uniqueVisitors.toLocaleString("pt-BR")} únicos</p>
+            <p className="text-xs text-muted-foreground mt-1">visualizaram a página</p>
           </CardContent>
         </Card>
         
@@ -287,8 +301,8 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
               <FunnelStepCard 
                 step={emailStep}
                 views={metrics.pageViews.email}
-                conversionRate={getConversionRate("question6", "email")}
-                dropoffRate={getDropoffRate("email", "question7")}
+                conversionRate={getConversionRate("question8", "email")}
+                dropoffRate={getDropoffRate("email", "result")}
                 isBiggestDropoff={emailStep.key === biggestDropoff.fromKey}
                 showArrow={true}
                 isHighlight={true}
@@ -296,7 +310,7 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
                 index={0}
               />
               <div className="text-sm text-muted-foreground">
-                <span className="font-semibold text-primary">{getConversionRate("question6", "email")}%</span> dos que chegaram na Q6
+                <span className="font-semibold text-primary">{getConversionRate("question8", "email")}%</span> dos que chegaram na Q8
               </div>
             </div>
           </div>

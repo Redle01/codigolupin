@@ -193,6 +193,7 @@ serve(async (req: Request): Promise<Response> => {
 
       // Process events into stats
       const pageViews: Record<string, number> = {
+        link_click: 0,
         landing: 0,
         question1: 0,
         question2: 0,
@@ -200,9 +201,9 @@ serve(async (req: Request): Promise<Response> => {
         question4: 0,
         question5: 0,
         question6: 0,
-        email: 0,
         question7: 0,
         question8: 0,
+        email: 0,
         result: 0,
       };
 
@@ -283,8 +284,8 @@ serve(async (req: Request): Promise<Response> => {
 
       // Define funnel step order
       const stepOrder = [
-        "landing", "question1", "question2", "question3", "question4",
-        "question5", "question6", "email", "question7", "question8", "result"
+        "link_click", "landing", "question1", "question2", "question3", "question4",
+        "question5", "question6", "question7", "question8", "email", "result"
       ];
 
       // Process events into visitor progress
