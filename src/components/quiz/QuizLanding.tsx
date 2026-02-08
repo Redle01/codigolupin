@@ -78,7 +78,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
               <img src="/images/avatar-1.webp" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
               <img src="/images/avatar-2.webp" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
               <img src="/images/avatar-3.webp" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
-              <img src="/images/avatar-4.jpg" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
+              <img src="/images/avatar-4.webp" alt="" className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top" loading="lazy" />
             </div>
             <span className="text-xs md:text-sm text-muted-foreground">
               <span className="text-primary font-semibold">
