@@ -64,7 +64,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             transition={{ delay: 0.6, duration: 0.5 }}
             className="text-[13px] md:text-sm text-muted-foreground mt-5 md:mt-5 italic px-4 md:px-0"
           >
-            "Em menos de 2 minutos, você descobrirá exatamente por que mulheres sofisticadas te colocam na friendzone e qual é seu tipo específico de magnetismo masculino adormecido."
+            "Em menos de 2 minutos, você descobrirá exatamente por que mulheres te colocam na friendzone."
           </m.p>
 
           {/* Social proof */}
