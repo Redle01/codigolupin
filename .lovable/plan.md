@@ -1,17 +1,20 @@
 
 
-# Substituir avatar-4 por nova imagem WebP
+# Remover "Seu Tipo de Magnetismo" e icone/coroa dos resultados
 
-## Alteracao
+## Arquivo
 
-| Arquivo | Acao |
-|---------|------|
-| `public/images/avatar-4.jpg` | Substituir pelo arquivo `download_1_1.webp` e renomear para `avatar-4.webp` |
-| `src/components/quiz/QuizLanding.tsx` | Atualizar referencia de `avatar-4.jpg` para `avatar-4.webp` |
+`src/components/quiz/QuizResult.tsx`
 
-## Detalhes
+## Alteracoes
 
-1. Copiar `user-uploads://download_1_1.webp` para `public/images/avatar-4.webp`
-2. Na linha 79 do QuizLanding, trocar `src="/images/avatar-4.jpg"` por `src="/images/avatar-4.webp"`
-3. Todas as classes CSS permanecem identicas (`w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-background object-cover object-top`)
+1. **Remover o bloco do icone/coroa** (linhas 49-67): O `m.div` que contem o circulo com o icone (Crown/Brain/Gem/Shield) e o efeito Sparkles sera removido inteiramente.
+
+2. **Remover a linha "Seu Tipo de Magnetismo"** (linha 75-77): O `<p>` com o texto "Seu Tipo de Magnetismo" sera removido.
+
+3. **Remover imports nao utilizados**: `Crown`, `Brain`, `Gem`, `Shield`, `Sparkles` e o mapa `iconMap` serao removidos, ja que nao terao mais uso.
+
+4. **Remover import de `ResultType`** da interface, caso deixe de ser necessario para o `iconMap`.
+
+O titulo do resultado, percentual, e todo o restante da pagina permanecem inalterados.
 
