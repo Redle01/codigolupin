@@ -1,40 +1,37 @@
 
+# Atualizar ordem do funil no Admin Nav Panel e Metricas
 
-# Mover captura de e-mail para depois da questao 8
+## Contexto
 
-## Resumo
+O fluxo atual do funil e: Landing -> Q1 -> Q2 -> Q3 -> Q4 -> Q5 -> Q6 -> Q7 -> Q8 -> Email -> Loading -> Resultado
 
-Atualmente a captura de e-mail ocorre apos a questao 6. A alteracao move essa etapa para imediatamente apos a questao 8 (ultima pergunta), antes da tela de loading/resultado.
+Porem, dois lugares no codigo ainda refletem a ordem antiga (email apos Q6):
 
-## Arquivo: `src/hooks/useQuiz.ts`
+1. **Admin Nav Panel** (`src/components/quiz/AdminNavPanel.tsx`)
+2. **Metricas do Funil** (`src/components/admin/FunnelMetricsInline.tsx`)
 
-### 1. Remover desvio para e-mail apos a questao 6
+## Alteracoes
 
-A condicao na linha 107 que redireciona para `"email"` apos `nextQuestion === 6` sera removida.
+### 1. `src/components/quiz/AdminNavPanel.tsx` (linhas 16-28)
 
-### 2. Inserir desvio para e-mail apos a questao 8
+Reordenar o array `steps` para:
 
-Quando todas as perguntas forem respondidas (`nextQuestion >= quizQuestions.length`), em vez de ir direto para `"loading"`, o fluxo ira para `"email"`. O resultado sera pre-calculado e armazenado no estado nesse momento.
-
-### 3. Ajustar `continueAfterEmail`
-
-Atualmente retorna para `questions` no indice 6. Sera alterado para ir direto para `"loading"`, ja que todas as perguntas ja foram respondidas.
-
-### 4. Ajustar `goBack` na tela de e-mail
-
-Permitir que o botao voltar na tela de e-mail retorne a ultima pergunta (questao 8, indice 7).
-
-## Arquivo: `src/components/quiz/Quiz.tsx`
-
-### 5. Ajustar tracking de paginas
-
-Nenhuma alteracao necessaria -- o tracking ja lida com o step `"email"` independentemente da posicao no fluxo.
-
-## Fluxo resultante
-
-```text
-Landing -> Q1 -> Q2 -> Q3 -> Q4 -> Q5 -> Q6 -> Q7 -> Q8 -> Email -> Loading -> Resultado
+```
+Landing -> Q1 -> Q2 -> Q3 -> Q4 -> Q5 -> Q6 -> Q7 -> Q8 -> Email -> Loading -> Result
 ```
 
-Todos os eventos, integracao com Meta Pixel, submissao de leads e redirecionamento de checkout permanecem inalterados.
+Mover `{ id: "email", label: "Email" }` da posicao atual (entre Q6 e Q7) para depois de Q8.
 
+### 2. `src/components/admin/FunnelMetricsInline.tsx` (linhas 39-51)
+
+Reordenar o array `funnelSteps` para:
+
+```
+Inicio -> Q1 -> Q2 -> Q3 -> Q4 -> Q5 -> Q6 -> Q7 -> Q8 -> Email -> Resultado
+```
+
+- Mover Q7 e Q8 para o grupo `"questions"` (antes estavam em `"post-email"`)
+- Mover Email para depois de Q8
+- Ajustar os grupos: Q7 e Q8 passam de `"post-email"` para `"questions"`, e Email permanece como `"email"` mas na posicao correta
+
+Isso garante que os cards visuais do funil, a barra de progresso e a tabela de resumo reflitam a ordem real do fluxo.
