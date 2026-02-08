@@ -20,9 +20,9 @@ const steps = [
   { id: "q4", label: "Q4", step: "questions", questionIndex: 3 },
   { id: "q5", label: "Q5", step: "questions", questionIndex: 4 },
   { id: "q6", label: "Q6", step: "questions", questionIndex: 5 },
-  { id: "email", label: "Email" },
   { id: "q7", label: "Q7", step: "questions", questionIndex: 6 },
   { id: "q8", label: "Q8", step: "questions", questionIndex: 7 },
+  { id: "email", label: "Email" },
   { id: "loading", label: "Loading" },
   { id: "result", label: "Result" },
 ] as const;
