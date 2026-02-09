@@ -107,7 +107,7 @@ export const EmailCapture = memo(function EmailCapture({
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-14 md:h-14 bg-gradient-gold text-primary-foreground font-bold text-base md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02]"
+              className="w-full h-14 md:h-14 bg-gradient-green text-primary-foreground font-bold text-base md:text-lg rounded-xl shadow-green-lg hover:shadow-green transition-all duration-300 hover:scale-[1.02]"
             >
               {isSubmitting ? (
                 <>
