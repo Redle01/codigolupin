@@ -1,40 +1,53 @@
 
-# Remover "Cliques no Link" do Fluxo do Funil
+# Ajustar visual dos resultados: CTAs e precos verdes
 
-## Resumo
+## Alteracoes
 
-Manter o card "Cliques no Link" nas metricas rapidas (grid superior), mas remover essa etapa do fluxo visual do funil e da tabela de resumo por etapa.
+### 1. `src/index.css` - Adicionar utilitarios verdes
 
-## Arquivo: `src/components/admin/FunnelMetricsInline.tsx`
+Adicionar classes utilitarias para o gradiente verde dos CTAs e shadow verde:
 
-### 1. Remover `link_click` do array `funnelSteps` (linha 41)
+```css
+.bg-gradient-green {
+  @apply bg-gradient-to-r from-[hsl(145_70%_30%)] via-[hsl(145_65%_38%)] to-[hsl(145_60%_45%)];
+}
 
-Remover a linha:
-```
-{ key: "link_click", label: "Cliques no Link", shortLabel: "Link", group: "pre-start" }
-```
+.shadow-green-lg {
+  box-shadow: 0 10px 50px -10px hsl(145 65% 38% / 0.4);
+}
 
-O array comecara diretamente com `landing`.
-
-### 2. Remover o grupo `"pre-start"` do filtro de `preEmailSteps` (linha 191)
-
-Atualizar de:
-```
-s.group === "pre-start" || s.group === "start" || s.group === "questions"
-```
-Para:
-```
-s.group === "start" || s.group === "questions"
+.shadow-green {
+  box-shadow: 0 4px 30px -5px hsl(145 65% 38% / 0.3);
+}
 ```
 
-### 3. Manter inalterado
+### 2. `src/components/quiz/QuizResult.tsx` - CTA verde e preco reestruturado
 
-- O card "Cliques no Link" na grid de metricas rapidas (linhas 199-209) permanece intacto
-- O calculo do `biggestDropoff` passa a ignorar `link_click` automaticamente
-- A barra de progresso e a tabela de resumo tambem deixam de incluir `link_click`
+**CTA (linha 150):**
+- Trocar `bg-gradient-gold` por `bg-gradient-green`
+- Trocar `shadow-gold-lg` por `shadow-green-lg`
+- Trocar `hover:shadow-gold` por `hover:shadow-green`
 
-### Resultado
+**Preco (linhas 105-110):**
+- Trocar cores de `text-primary` para `text-green-500` nos elementos de preco
+- Reduzir visualmente `installments` (parcelas): texto menor e cor mais suave
+- Aumentar destaque do valor principal (`amount`): texto `text-5xl md:text-6xl`
+- Reduzir centavos: texto `text-base md:text-lg` e peso `font-semibold` (em vez de `font-bold`)
+- Reduzir `currency` (R$): texto `text-base md:text-lg`
 
-- Metricas rapidas: Cliques no Link, Entradas, Captura Email, Conversao Final, Maior Gargalo (sem alteracao)
-- Fluxo do funil: Inicio -> Q1-Q8 -> Email -> Resultado (sem `link_click`)
-- Tabela de resumo: Inicio -> Q1-Q8 -> Email -> Resultado (sem `link_click`)
+Estrutura resultante do bloco de preco:
+
+```tsx
+<div className="flex items-baseline justify-center gap-1 mb-4">
+  <span className="text-muted-foreground text-xs md:text-sm">{pricing.installments}</span>
+  <span className="text-green-500 text-base md:text-lg font-semibold">{pricing.currency}</span>
+  <span className="text-green-500 text-5xl md:text-6xl font-bold leading-none">{pricing.amount}</span>
+  <span className="text-green-500 text-base md:text-lg font-semibold self-start mt-1">{pricing.cents}</span>
+</div>
+```
+
+### 3. Sem impacto em performance
+
+- Apenas alteracoes de classes CSS Tailwind (zero JS adicional)
+- Utilitarios CSS adicionais sao minimos (3 classes)
+- Nenhum novo import ou dependencia
