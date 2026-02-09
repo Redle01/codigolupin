@@ -102,11 +102,11 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             <p className="text-muted-foreground font-medium text-center text-sm md:text-base mb-3">
               {pricing.emoji} {pricing.label}
             </p>
-            <div className="flex items-center justify-center gap-1 mb-4">
-              <span className="text-muted-foreground text-sm md:text-base">{pricing.installments}</span>
-              <span className="text-primary text-lg md:text-xl font-bold">{pricing.currency}</span>
-              <span className="text-primary text-4xl md:text-5xl font-bold leading-none">{pricing.amount}</span>
-              <span className="text-primary text-lg md:text-xl font-bold self-start mt-1">{pricing.cents}</span>
+            <div className="flex items-baseline justify-center gap-1 mb-4">
+              <span className="text-muted-foreground text-xs md:text-sm">{pricing.installments}</span>
+              <span className="text-green-500 text-base md:text-lg font-semibold">{pricing.currency}</span>
+              <span className="text-green-500 text-5xl md:text-6xl font-bold leading-none">{pricing.amount}</span>
+              <span className="text-green-500 text-base md:text-lg font-semibold self-start mt-1">{pricing.cents}</span>
             </div>
             
             <p className="text-muted-foreground text-sm md:text-sm mb-3">Bônus Inclusos:</p>
@@ -147,7 +147,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFl
             <Button
               onClick={handleCheckoutClick}
               size="lg"
-              className="w-full h-auto min-h-[3.5rem] md:min-h-[4rem] py-3 md:py-4 px-4 md:px-6 bg-gradient-gold text-primary-foreground font-bold text-xs sm:text-sm md:text-lg rounded-xl shadow-gold-lg hover:shadow-gold transition-all duration-300 hover:scale-[1.02] group leading-tight whitespace-normal text-center"
+              className="w-full h-auto min-h-[3.5rem] md:min-h-[4rem] py-3 md:py-4 px-4 md:px-6 bg-gradient-green text-primary-foreground font-bold text-xs sm:text-sm md:text-lg rounded-xl shadow-green-lg hover:shadow-green transition-all duration-300 hover:scale-[1.02] group leading-tight whitespace-normal text-center"
             >
               {result.ctaText}
               <ArrowRight className="w-5 h-5 md:w-5 md:h-5 ml-2 shrink-0 group-hover:translate-x-1 transition-transform" />

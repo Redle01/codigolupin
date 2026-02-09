@@ -87,6 +87,18 @@
     box-shadow: 0 10px 50px -10px hsl(0 80% 42% / 0.4);
   }
 
+  .bg-gradient-green {
+    @apply bg-gradient-to-r from-[hsl(145_70%_30%)] via-[hsl(145_65%_38%)] to-[hsl(145_60%_45%)];
+  }
+
+  .shadow-green-lg {
+    box-shadow: 0 10px 50px -10px hsl(145 65% 38% / 0.4);
+  }
+
+  .shadow-green {
+    box-shadow: 0 4px 30px -5px hsl(145 65% 38% / 0.3);
+  }
+
   /* Premium Lupin Progress Bar */
   .bg-gradient-lupin-progress {
     background: linear-gradient(
