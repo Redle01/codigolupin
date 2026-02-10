@@ -1,1 +1,10 @@
 project_id = "enbhyeddogbocxgttkkd"
+
+[functions.quiz-metrics]
+verify_jwt = false
+
+[functions.quiz-leads]
+verify_jwt = false
+
+[functions.quiz-submit-email]
+verify_jwt = false
