@@ -48,13 +48,13 @@ async function verifyAdmin(req: Request, supabaseUrl: string, supabaseAnonKey: s
   });
 
   const token = authHeader.replace("Bearer ", "");
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+  const { data: { user }, error: userError } = await supabase.auth.getUser(token);
   
-  if (claimsError || !claimsData?.claims) {
+  if (userError || !user) {
     return { isAdmin: false, error: "Unauthorized - Invalid token" };
   }
 
-  const userId = claimsData.claims.sub;
+  const userId = user.id;
   
   // Check admin role using the has_role function
   const { data: hasRole, error: roleError } = await supabase.rpc("has_role", {
