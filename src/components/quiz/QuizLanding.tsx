@@ -38,7 +38,7 @@ export function QuizLanding({ onStart, totalParticipants }: QuizLandingProps) {
             className="text-[15px] md:text-base lg:text-lg text-muted-foreground mb-8 md:mb-10 max-w-xl mx-auto leading-relaxed px-1 md:px-0"
           >
             Descubra o <span className="text-primary font-semibold">ÚNICO bloqueio</span> que está sabotando suas chances 
-            com mulheres de qualidade e como despertar o magnetismo que elas não conseguem resistir
+            com mulheres de qualidade e como se tornar extremamente magnético ao ponto delas não conseguirem resistir
           </m.p>
 
           {/* CTA Button */}
