@@ -17,7 +17,6 @@ export interface QuizState {
   email: string;
   result: ResultType | null;
   isSubmitting: boolean;
-  offerFlow: 1 | 2 | null; // Fluxo de oferta baseado na Q7
 }
 
 const getInitialState = (): QuizState => ({
@@ -27,17 +26,7 @@ const getInitialState = (): QuizState => ({
   email: "",
   result: null,
   isSubmitting: false,
-  offerFlow: null,
 });
-
-// Calcula o fluxo de oferta baseado na resposta da Questão 7
-function getOfferFlow(answers: Record<number, string>): 1 | 2 | null {
-  const question7Answer = answers[6]; // Q7 está no índice 6 (0-indexed)
-  if (!question7Answer) return null;
-  
-  const flowMapping = quizConfig.question7FlowMapping;
-  return flowMapping[question7Answer as keyof typeof flowMapping] || null;
-}
 
 const QUIZ_STATE_STORAGE_KEY = "quiz_user_state";
 const SESSION_ACTIVE_KEY = "quiz_session_active";
@@ -46,30 +35,25 @@ export function useQuiz() {
   const { trackChegouCheckout } = useMetaPixel();
   const [state, setState] = useState<QuizState>(() => {
     if (typeof window !== "undefined") {
-      // Check if this is a page refresh (session still active) or a new entry
       const isSessionActive = sessionStorage.getItem(SESSION_ACTIVE_KEY);
       
       if (isSessionActive) {
-        // This is a page refresh - restore state from localStorage
         const stored = localStorage.getItem(QUIZ_STATE_STORAGE_KEY);
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
             return {
               ...parsed,
-              isSubmitting: false, // Always reset submitting state
-              offerFlow: parsed.offerFlow || null, // Preserve offerFlow
+              isSubmitting: false,
             };
           } catch {
             // If parsing fails, use default state
           }
         }
       } else {
-        // This is a new entry - clear any previous state and start fresh
         localStorage.removeItem(QUIZ_STATE_STORAGE_KEY);
       }
       
-      // Mark session as active for refresh detection
       sessionStorage.setItem(SESSION_ACTIVE_KEY, "true");
     }
     return getInitialState();
@@ -83,7 +67,6 @@ export function useQuiz() {
       answers: state.answers,
       email: state.email,
       result: state.result,
-      offerFlow: state.offerFlow,
     };
     localStorage.setItem(QUIZ_STATE_STORAGE_KEY, JSON.stringify(stateToStore));
   }, [state.currentStep, state.currentQuestion, state.answers, state.email, state.result]);
@@ -97,19 +80,12 @@ export function useQuiz() {
       const newAnswers = { ...prev.answers, [questionId]: answerId };
       const nextQuestion = prev.currentQuestion + 1;
       
-      // Calcular offerFlow após responder Q7 (índice 6)
-      let offerFlow = prev.offerFlow;
-      if (questionId === 6) { // Q7 respondida
-        offerFlow = getOfferFlow(newAnswers);
-      }
-      
-      // If all questions answered, go to email capture
       if (nextQuestion >= quizQuestions.length) {
         const result = calculateResult(newAnswers);
-        return { ...prev, answers: newAnswers, offerFlow, result, currentStep: "email" };
+        return { ...prev, answers: newAnswers, result, currentStep: "email" };
       }
       
-      return { ...prev, answers: newAnswers, offerFlow, currentQuestion: nextQuestion };
+      return { ...prev, answers: newAnswers, currentQuestion: nextQuestion };
     });
   }, []);
 
@@ -124,7 +100,6 @@ export function useQuiz() {
   const goBack = useCallback(() => {
     setState((prev) => {
       if (prev.currentStep === "email") {
-        // Return to last question (Q8, index 7)
         return { ...prev, currentStep: "questions", currentQuestion: quizQuestions.length - 1 };
       }
       if (prev.currentQuestion > 0) {
@@ -144,7 +119,6 @@ export function useQuiz() {
   const submitEmail = useCallback(async () => {
     if (!state.email) return false;
     
-    // Não salvar leads em ambiente interno - simular sucesso para continuar fluxo
     if (isInternalAccess()) {
       console.debug("[Quiz] Skipping email submission in internal environment");
       return true;
@@ -161,7 +135,6 @@ export function useQuiz() {
           email: state.email,
           visitor_id: visitorId,
           answers: state.answers,
-          offer_flow: state.offerFlow,
         },
       });
 
@@ -176,15 +149,14 @@ export function useQuiz() {
     } catch (error) {
       console.error("Error submitting email:", error);
       setState((prev) => ({ ...prev, isSubmitting: false }));
-      return true; // Continue anyway
+      return true;
     }
-  }, [state.email, state.answers, state.offerFlow]);
+  }, [state.email, state.answers]);
 
-  // Update result type after quiz completion (skip in internal environments)
+  // Update result type after quiz completion
   const updateResultType = useCallback(async () => {
     if (!state.email || !state.result) return;
     
-    // Não atualizar leads em ambiente interno
     if (isInternalAccess()) {
       console.debug("[Quiz] Skipping result type update in internal environment");
       return;
@@ -194,22 +166,19 @@ export function useQuiz() {
       const visitorId = getOrCreateVisitorId();
       const supabase = await getSupabase();
       
-      // Update the lead with result type and offer flow
       await supabase.functions.invoke("quiz-submit-email", {
         body: {
           email: state.email,
           visitor_id: visitorId,
           result_type: state.result,
           answers: state.answers,
-          offer_flow: state.offerFlow,
         },
       });
     } catch (error) {
       console.error("Error updating result type:", error);
     }
-  }, [state.email, state.result, state.answers, state.offerFlow]);
+  }, [state.email, state.result, state.answers]);
 
-  // Call updateResultType when result is calculated
   useEffect(() => {
     if (state.result && state.email) {
       updateResultType();
@@ -217,15 +186,9 @@ export function useQuiz() {
   }, [state.result, state.email, updateResultType]);
 
   const redirectToCheckout = useCallback(() => {
-    // Determinar URL de checkout baseada no fluxo de oferta
-    const flow = state.offerFlow || 1; // Default para fluxo 1
-    const checkoutUrl = flow === 1 
-      ? quizConfig.checkoutUrls.flow1 
-      : quizConfig.checkoutUrls.flow2;
-    
+    const checkoutUrl = quizConfig.checkoutUrl;
     if (!checkoutUrl) return;
     
-    // Allowlist of permitted checkout domains
     const ALLOWED_CHECKOUT_DOMAINS = [
       'pay.hotmart.com',
       'app.hotmart.com',
@@ -236,54 +199,44 @@ export function useQuiz() {
     try {
       const url = new URL(checkoutUrl);
       
-      // Validate domain is in allowlist
       if (!ALLOWED_CHECKOUT_DOMAINS.includes(url.hostname)) {
         console.error('Invalid checkout domain:', url.hostname);
         return;
       }
       
-      // Require HTTPS
       if (url.protocol !== 'https:') {
         console.error('Checkout URL must use HTTPS');
         return;
       }
       
-      // Pré-preencher email
       if (state.email) {
         url.searchParams.set("email", state.email);
       }
       
-      // Pré-preencher perfil
       if (state.result) {
         url.searchParams.set("profile", state.result);
       }
       
-      // Adicionar UTM para rastreamento
       url.searchParams.set("utm_source", "quiz");
       url.searchParams.set("utm_medium", "funnel");
-      url.searchParams.set("utm_campaign", `flow${flow}`);
+      url.searchParams.set("utm_campaign", "quiz");
       
-      // Visitor ID para associar no webhook (rastreamento)
       const visitorId = getOrCreateVisitorId();
       url.searchParams.set("ref", visitorId);
       
-      // Disparar eventos do Meta Pixel ANTES do redirect (assíncrono, não bloqueia)
-      // 1. Custom event: Chegou no Checkout
       trackChegouCheckout({
         result_type: state.result || undefined,
-        offer_flow: flow,
       });
       
-      // Pequeno delay para garantir que os eventos sejam enviados antes do redirect
       setTimeout(() => {
         window.location.href = url.toString();
       }, 100);
     } catch (error) {
       console.error('Invalid checkout URL:', error);
     }
-  }, [state.email, state.result, state.offerFlow, trackChegouCheckout]);
+  }, [state.email, state.result, trackChegouCheckout]);
 
-  // Admin-only navigation functions (protected by isInternalAccess)
+  // Admin-only navigation functions
   const goToStep = useCallback((step: QuizState["currentStep"], questionIndex?: number) => {
     if (!isInternalAccess()) return;
     
@@ -304,7 +257,6 @@ export function useQuiz() {
     }));
   }, []);
 
-  // Memoize isInternal to avoid recalculating
   const isInternal = useMemo(() => isInternalAccess(), []);
 
   return {
@@ -319,7 +271,6 @@ export function useQuiz() {
     redirectToCheckout,
     questions: quizQuestions,
     results: quizResults,
-    // Admin-only functions
     goToStep,
     setResultDirect,
     isInternal,
@@ -343,7 +294,6 @@ function calculateResult(answers: Record<number, string>): ResultType {
     }
   });
   
-  // Find highest score
   const entries = Object.entries(scores) as [ResultType, number][];
   entries.sort((a, b) => b[1] - a[1]);
   

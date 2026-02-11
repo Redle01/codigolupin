@@ -29,12 +29,10 @@ export function useMetaPixel() {
   // Custom Event: Chegou no Checkout - disparar antes do redirecionamento
   const trackChegouCheckout = useCallback((data?: {
     result_type?: string;
-    offer_flow?: number;
   }) => {
     if (typeof window !== "undefined" && window.fbq) {
       window.fbq("trackCustom", "ChegouNoCheckout", {
         result_type: data?.result_type,
-        offer_flow: data?.offer_flow,
       });
     }
   }, []);
@@ -42,12 +40,10 @@ export function useMetaPixel() {
   // InitiateCheckout - disparar ao clicar no CTA do resultado
   const trackInitiateCheckout = useCallback((data?: {
     result_type?: string;
-    offer_flow?: number;
   }) => {
     if (typeof window !== "undefined" && window.fbq) {
       window.fbq("track", "InitiateCheckout", {
         content_name: data?.result_type,
-        content_category: `flow_${data?.offer_flow}`,
       });
     }
   }, []);

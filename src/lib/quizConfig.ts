@@ -1,21 +1,6 @@
 // Quiz Configuration - Easy to update URLs
 export const quizConfig = {
-  // URLs de checkout por fluxo condicional (baseado na Questão 7)
-  checkoutUrls: {
-    flow1: "https://checkout.ticto.app/OAD8936CD", // Respostas A/B na Q7
-    flow2: "https://checkout.ticto.app/O6DE7A453", // Respostas C/D na Q7
-  },
-  
-  // Mapeamento de respostas da Q7 para fluxos de oferta
-  // A e B = Fluxo 1 (preço mais baixo), C e D = Fluxo 2 (premium)
-  question7FlowMapping: {
-    a: 1,
-    b: 1,
-    c: 2,
-    d: 2,
-  } as const,
-  
-  // Legacy: mantido para compatibilidade (não usado diretamente)
+  // URL única de checkout
   checkoutUrl: "https://checkout.ticto.app/O6DE7A453",
   
   // Webhook URL for email marketing integration
@@ -25,24 +10,15 @@ export const quizConfig = {
   totalParticipants: 12847,
 };
 
-// Configuração de bônus por fluxo
+// Configuração de bônus e pricing (oferta única)
 export const bonusConfig = {
-  flow1: {
-    primary: '🎁 "12 Técnicas de Conversação que Hipnotizam Mulheres"',
-    primaryPrice: null as string | null,
-    secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher"',
-    secondaryPrice: 'R$ 67',
-  },
-  flow2: {
+  bonuses: {
     primary: '🎁 "As Confissões de Arsène Lupin"',
     primaryPrice: 'R$ 97',
     secondary: '🎁 "25 Frases que Desarmam Qualquer Mulher"',
     secondaryPrice: 'R$ 67',
   },
-  pricing: {
-    flow1: { emoji: "🔥", label: "OFERTA ESPECIAL para seu perfil:", installments: "9x", currency: "R$", amount: "6", cents: ",18" },
-    flow2: { emoji: "🔥", label: "OFERTA ESPECIAL para seu perfil:", installments: "12x", currency: "R$", amount: "10", cents: ",03" },
-  },
+  pricing: { emoji: "🔥", label: "OFERTA ESPECIAL para seu perfil:", installments: "12x", currency: "R$", amount: "10", cents: ",03" },
 };
 
 // Quiz Questions Data

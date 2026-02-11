@@ -10,7 +10,6 @@ export interface Visitor {
   startedAt: string;
   lastSeenAt: string;
   profileType?: string;
-  offerFlow?: number;
 }
 
 export interface VisitorStats {
@@ -18,10 +17,6 @@ export interface VisitorStats {
   completedFunnel: number;
   reachedEmail: number;
   abandonedAtEmail: number;
-  flowStats: {
-    flow1: { leads: number; completions: number };
-    flow2: { leads: number; completions: number };
-  };
 }
 
 export function useVisitors() {
@@ -48,10 +43,6 @@ export function useVisitors() {
         completedFunnel: data.completedFunnel,
         reachedEmail: data.reachedEmail,
         abandonedAtEmail: data.abandonedAtEmail,
-        flowStats: data.flowStats || {
-          flow1: { leads: 0, completions: 0 },
-          flow2: { leads: 0, completions: 0 },
-        },
       });
     } catch (error) {
       console.error("Error fetching visitors:", error);

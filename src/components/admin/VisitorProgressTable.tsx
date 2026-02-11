@@ -52,7 +52,6 @@ export function VisitorProgressTable({ visitors, isLoading }: VisitorProgressTab
             <TableHead>Email</TableHead>
             <TableHead>Última Etapa</TableHead>
             <TableHead>Abandonou em</TableHead>
-            <TableHead>Oferta</TableHead>
             <TableHead>Perfil</TableHead>
             <TableHead>Última Atividade</TableHead>
           </TableRow>
@@ -83,21 +82,6 @@ export function VisitorProgressTable({ visitors, isLoading }: VisitorProgressTab
                   </Badge>
                 ) : visitor.reachedStep === "result" ? (
                   <span className="text-green-500">✓ Completou</span>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </TableCell>
-              <TableCell>
-                {visitor.offerFlow ? (
-                  <Badge 
-                    variant="outline"
-                    className={visitor.offerFlow === 1 
-                      ? "bg-blue-500/10 text-blue-500 border-blue-500/20" 
-                      : "bg-purple-500/10 text-purple-500 border-purple-500/20"
-                    }
-                  >
-                    Oferta {visitor.offerFlow}
-                  </Badge>
                 ) : (
                   <span className="text-muted-foreground">-</span>
                 )}
