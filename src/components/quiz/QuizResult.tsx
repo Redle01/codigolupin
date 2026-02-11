@@ -8,22 +8,16 @@ import { useMetaPixel } from "@/hooks/useMetaPixel";
 interface QuizResultProps {
   result: ResultData;
   onCheckout: () => void;
-  offerFlow: 1 | 2 | null;
 }
 
-export const QuizResult = memo(function QuizResult({ result, onCheckout, offerFlow }: QuizResultProps) {
+export const QuizResult = memo(function QuizResult({ result, onCheckout }: QuizResultProps) {
   const { trackInitiateCheckout } = useMetaPixel();
   
-  // Determina os bônus e pricing baseado no fluxo (Q7)
-  const flow = offerFlow || 2; // Default para flow 2 se não definido
-  const bonuses = flow === 1 ? bonusConfig.flow1 : bonusConfig.flow2;
-  const pricing = flow === 1 ? bonusConfig.pricing.flow1 : bonusConfig.pricing.flow2;
+  const { bonuses, pricing } = bonusConfig;
 
-  // Handler que dispara InitiateCheckout antes do redirect
   const handleCheckoutClick = () => {
     trackInitiateCheckout({
       result_type: result.type,
-      offer_flow: flow,
     });
     onCheckout();
   };

@@ -339,7 +339,6 @@ export default function Admin() {
                   metrics={metrics}
                   getDropoffRate={getDropoffRate}
                   getConversionRate={getConversionRate}
-                  flowCounts={stats?.flowCounts}
                 />
               </CardContent>
             </Card>
@@ -373,36 +372,6 @@ export default function Admin() {
                 )}
               </div>
             </div>
-            
-            {/* Flow Stats Cards */}
-            {visitorStats?.flowStats && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground mb-1">Leads Oferta 1</p>
-                    <p className="text-2xl font-bold text-primary">{visitorStats.flowStats.flow1.leads}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-primary/5 border-primary/20">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground mb-1">Conversões Oferta 1</p>
-                    <p className="text-2xl font-bold text-primary">{visitorStats.flowStats.flow1.completions}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-secondary/50 border-secondary">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground mb-1">Leads Oferta 2</p>
-                    <p className="text-2xl font-bold text-secondary-foreground">{visitorStats.flowStats.flow2.leads}</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-secondary/50 border-secondary">
-                  <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground mb-1">Conversões Oferta 2</p>
-                    <p className="text-2xl font-bold text-secondary-foreground">{visitorStats.flowStats.flow2.completions}</p>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
             
             <VisitorProgressTable visitors={visitors} isLoading={isVisitorsLoading} />
           </TabsContent>
