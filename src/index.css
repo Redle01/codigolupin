@@ -135,4 +135,35 @@
     background-color: hsl(var(--border));
     border-radius: 3px;
   }
+
+  /* Performance-optimized CSS animations (replaces framer-motion on landing) */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.5s ease-out both;
+    opacity: 0;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out both;
+    opacity: 0;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.35s ease-out both;
+    opacity: 0;
+  }
 }
