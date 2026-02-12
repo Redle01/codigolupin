@@ -1,4 +1,4 @@
-import { useEffect, useRef, lazy, Suspense, memo, useCallback } from "react";
+import { useEffect, useRef, lazy, Suspense, memo, useCallback, useState } from "react";
 import { useQuiz } from "@/hooks/useQuiz";
 import { useFunnelMetrics, getOrCreateVisitorId } from "@/hooks/useFunnelMetrics";
 import { useMetaPixel } from "@/hooks/useMetaPixel";
@@ -56,39 +56,45 @@ export function Quiz() {
   const lastTrackedPage = useRef<string | null>(null);
   const pixelInitializedRef = useRef(false);
 
-  // Initialize Meta Pixel with visitor_id (skip in internal environments)
+  // Defer tracking initialization until after first paint
+  const [trackingReady, setTrackingReady] = useState(false);
   useEffect(() => {
-    // Não inicializar Meta Pixel em ambiente interno
-    if (isInternal) return;
-    
+    if ("requestIdleCallback" in window) {
+      (window as Window).requestIdleCallback(() => setTrackingReady(true), { timeout: 3000 });
+    } else {
+      setTimeout(() => setTrackingReady(true), 1000);
+    }
+  }, []);
+
+  // Initialize Meta Pixel with visitor_id (deferred, skip in internal environments)
+  useEffect(() => {
+    if (!trackingReady || isInternal) return;
     if (!pixelInitializedRef.current) {
       const visitorId = getOrCreateVisitorId();
       setExternalId(visitorId);
       pixelInitializedRef.current = true;
     }
-  }, [setExternalId, isInternal]);
+  }, [trackingReady, setExternalId, isInternal]);
 
-  // Track initial visit
+  // Track initial visit (deferred)
   useEffect(() => {
+    if (!trackingReady) return;
     const visitTracked = sessionStorage.getItem(VISIT_TRACKED_KEY);
     if (!visitTracked) {
       sessionStorage.setItem(VISIT_TRACKED_KEY, "true");
     }
-  }, []);
+  }, [trackingReady]);
 
   // Progressive preload based on current step
   useEffect(() => {
     const preloadNext = () => {
       if (state.currentStep === "landing") {
-        // Preload QuizQuestion during idle on landing
         import("./QuizQuestion");
       } else if (state.currentStep === "questions") {
-        // Preload EmailCapture when reaching Q5
         if (state.currentQuestion >= 4) {
           import("./EmailCapture");
         }
       } else if (state.currentStep === "email") {
-        // Preload QuizLoading and QuizResult during email capture
         import("./QuizLoading");
         import("./QuizResult");
       }
@@ -101,16 +107,14 @@ export function Quiz() {
     }
   }, [state.currentStep, state.currentQuestion]);
 
-  // Track page views - send to server on every step change (skip in internal environments)
+  // Track page views (deferred)
   useEffect(() => {
-    // Não rastrear em ambiente interno
-    if (isInternal) {
-      console.debug("[Quiz] Skipping tracking in internal environment");
+    if (!trackingReady || isInternal) {
+      if (isInternal) console.debug("[Quiz] Skipping tracking in internal environment");
       return;
     }
 
     let currentPage: string;
-    
     if (state.currentStep === "landing") {
       currentPage = "landing";
     } else if (state.currentStep === "questions") {
@@ -118,23 +122,21 @@ export function Quiz() {
     } else if (state.currentStep === "email") {
       currentPage = "email";
     } else if (state.currentStep === "loading") {
-      return; // Don't track loading screen
+      return;
     } else if (state.currentStep === "result") {
       currentPage = "result";
     } else {
       return;
     }
 
-    // Only track if page changed
     if (currentPage !== lastTrackedPage.current) {
       trackPageView(currentPage as keyof typeof metrics.pageViews);
-      // Fire Meta Pixel PageView asynchronously (non-blocking)
       trackMetaPageView();
       lastTrackedPage.current = currentPage;
     }
-  }, [state.currentStep, state.currentQuestion, trackPageView, trackMetaPageView]);
+  }, [trackingReady, state.currentStep, state.currentQuestion, trackPageView, trackMetaPageView, isInternal, metrics.pageViews]);
 
-  // Update Meta Pixel with email when captured (Advanced Matching)
+  // Update Meta Pixel with email when captured
   useEffect(() => {
     if (state.email && pixelInitializedRef.current) {
       const visitorId = getOrCreateVisitorId();
@@ -142,7 +144,6 @@ export function Quiz() {
     }
   }, [state.email, initWithUser]);
 
-  // Memoized handlers to prevent unnecessary re-renders
   const handleEmailSubmit = useCallback(async () => {
     return submitEmail();
   }, [submitEmail]);
