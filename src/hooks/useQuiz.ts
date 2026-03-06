@@ -11,7 +11,7 @@ const getSupabase = async () => {
 };
 
 export interface QuizState {
-  currentStep: "landing" | "questions" | "email" | "loading" | "result";
+  currentStep: "questions" | "email" | "loading" | "result";
   currentQuestion: number;
   answers: Record<number, string>;
   email: string;
@@ -20,7 +20,7 @@ export interface QuizState {
 }
 
 const getInitialState = (): QuizState => ({
-  currentStep: "landing",
+  currentStep: "questions",
   currentQuestion: 0,
   answers: {},
   email: "",
@@ -104,9 +104,6 @@ export function useQuiz() {
       }
       if (prev.currentQuestion > 0) {
         return { ...prev, currentQuestion: prev.currentQuestion - 1 };
-      }
-      if (prev.currentStep === "questions" && prev.currentQuestion === 0) {
-        return { ...prev, currentStep: "landing" };
       }
       return prev;
     });
@@ -261,7 +258,6 @@ export function useQuiz() {
 
   return {
     state,
-    startQuiz,
     answerQuestion,
     completeLoading,
     continueAfterEmail,
