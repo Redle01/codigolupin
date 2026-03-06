@@ -2,16 +2,12 @@ import { useEffect, useRef, lazy, Suspense, memo, useCallback, useState } from "
 import { useQuiz } from "@/hooks/useQuiz";
 import { useFunnelMetrics, getOrCreateVisitorId } from "@/hooks/useFunnelMetrics";
 import { useMetaPixel } from "@/hooks/useMetaPixel";
-import { quizConfig } from "@/lib/quizConfig";
-import { QuizLanding } from "./QuizLanding";
+import { QuizQuestion } from "./QuizQuestion";
 const AdminNavPanel = lazy(() =>
   import("./AdminNavPanel").then(m => ({ default: m.AdminNavPanel }))
 );
 
 // Lazy load non-critical components
-const QuizQuestion = lazy(() => 
-  import("./QuizQuestion").then(m => ({ default: m.QuizQuestion }))
-);
 const EmailCapture = lazy(() => 
   import("./EmailCapture").then(m => ({ default: m.EmailCapture }))
 );
@@ -30,13 +26,9 @@ const QuizFallback = memo(() => (
 ));
 QuizFallback.displayName = "QuizFallback";
 
-// Memoized landing component
-const MemoizedQuizLanding = memo(QuizLanding);
-
 export function Quiz() {
   const {
     state,
-    startQuiz,
     answerQuestion,
     completeLoading,
     continueAfterEmail,
@@ -88,9 +80,7 @@ export function Quiz() {
   // Progressive preload based on current step
   useEffect(() => {
     const preloadNext = () => {
-      if (state.currentStep === "landing") {
-        import("./QuizQuestion");
-      } else if (state.currentStep === "questions") {
+      if (state.currentStep === "questions") {
         if (state.currentQuestion >= 4) {
           import("./EmailCapture");
         }
@@ -115,9 +105,7 @@ export function Quiz() {
     }
 
     let currentPage: string;
-    if (state.currentStep === "landing") {
-      currentPage = "landing";
-    } else if (state.currentStep === "questions") {
+    if (state.currentStep === "questions") {
       currentPage = `question${state.currentQuestion + 1}`;
     } else if (state.currentStep === "email") {
       currentPage = "email";
@@ -167,26 +155,19 @@ export function Quiz() {
         </Suspense>
       )}
 
-      {state.currentStep === "landing" && (
-        <MemoizedQuizLanding
-          onStart={startQuiz}
-          totalParticipants={quizConfig.totalParticipants}
+      {state.currentStep === "questions" && (
+        <QuizQuestion
+          questionNumber={state.currentQuestion + 1}
+          totalQuestions={questions.length}
+          question={questions[state.currentQuestion].question}
+          options={questions[state.currentQuestion].options}
+          onAnswer={(answerId) => answerQuestion(state.currentQuestion, answerId)}
+          onBack={goBack}
+          selectedAnswer={state.answers[state.currentQuestion]}
         />
       )}
 
       <Suspense fallback={<QuizFallback />}>
-        {state.currentStep === "questions" && (
-          <QuizQuestion
-            questionNumber={state.currentQuestion + 1}
-            totalQuestions={questions.length}
-            question={questions[state.currentQuestion].question}
-            options={questions[state.currentQuestion].options}
-            onAnswer={(answerId) => answerQuestion(state.currentQuestion, answerId)}
-            onBack={goBack}
-            selectedAnswer={state.answers[state.currentQuestion]}
-          />
-        )}
-
         {state.currentStep === "email" && (
           <EmailCapture
             email={state.email}

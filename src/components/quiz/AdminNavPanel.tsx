@@ -7,13 +7,12 @@ interface AdminNavPanelProps {
   currentStep: string;
   currentQuestion: number;
   currentResult: ResultType | null;
-  onGoToStep: (step: "landing" | "questions" | "email" | "loading" | "result", questionIndex?: number) => void;
+  onGoToStep: (step: "questions" | "email" | "loading" | "result", questionIndex?: number) => void;
   onSetResult: (resultType: ResultType) => void;
   totalQuestions: number;
 }
 
 const steps = [
-  { id: "landing", label: "Landing" },
   { id: "q1", label: "Q1", step: "questions", questionIndex: 0 },
   { id: "q2", label: "Q2", step: "questions", questionIndex: 1 },
   { id: "q3", label: "Q3", step: "questions", questionIndex: 2 },
@@ -64,9 +63,7 @@ export const AdminNavPanel = memo(function AdminNavPanel({
   };
 
   const handleStepClick = (step: typeof steps[number]) => {
-    if (step.id === "landing") {
-      onGoToStep("landing");
-    } else if (step.id === "email") {
+    if (step.id === "email") {
       onGoToStep("email");
     } else if (step.id === "loading") {
       onGoToStep("loading");
@@ -78,7 +75,6 @@ export const AdminNavPanel = memo(function AdminNavPanel({
   };
 
   const isCurrentStep = (step: typeof steps[number]) => {
-    if (step.id === "landing" && currentStep === "landing") return true;
     if (step.id === "email" && currentStep === "email") return true;
     if (step.id === "loading" && currentStep === "loading") return true;
     if (step.id === "result" && currentStep === "result") return true;

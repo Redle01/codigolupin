@@ -11,7 +11,7 @@ const getSupabase = async () => {
 };
 
 export interface QuizState {
-  currentStep: "landing" | "questions" | "email" | "loading" | "result";
+  currentStep: "questions" | "email" | "loading" | "result";
   currentQuestion: number;
   answers: Record<number, string>;
   email: string;
@@ -20,7 +20,7 @@ export interface QuizState {
 }
 
 const getInitialState = (): QuizState => ({
-  currentStep: "landing",
+  currentStep: "questions",
   currentQuestion: 0,
   answers: {},
   email: "",
@@ -71,9 +71,7 @@ export function useQuiz() {
     localStorage.setItem(QUIZ_STATE_STORAGE_KEY, JSON.stringify(stateToStore));
   }, [state.currentStep, state.currentQuestion, state.answers, state.email, state.result]);
 
-  const startQuiz = useCallback(() => {
-    setState((prev) => ({ ...prev, currentStep: "questions", currentQuestion: 0 }));
-  }, []);
+
 
   const answerQuestion = useCallback((questionId: number, answerId: string) => {
     setState((prev) => {
@@ -104,9 +102,6 @@ export function useQuiz() {
       }
       if (prev.currentQuestion > 0) {
         return { ...prev, currentQuestion: prev.currentQuestion - 1 };
-      }
-      if (prev.currentStep === "questions" && prev.currentQuestion === 0) {
-        return { ...prev, currentStep: "landing" };
       }
       return prev;
     });
@@ -261,7 +256,6 @@ export function useQuiz() {
 
   return {
     state,
-    startQuiz,
     answerQuestion,
     completeLoading,
     continueAfterEmail,
