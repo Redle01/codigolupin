@@ -42,6 +42,10 @@ export function useQuiz() {
         if (stored) {
           try {
             const parsed = JSON.parse(stored);
+            if (parsed.currentStep === "landing") {
+              parsed.currentStep = "questions";
+              parsed.currentQuestion = 0;
+            }
             return {
               ...parsed,
               isSubmitting: false,
@@ -137,6 +141,14 @@ export function useQuiz() {
         console.error("Error submitting email:", error);
       } else {
         console.log("Email submitted successfully");
+        
+        // Disparar evento Lead para o Meta Pixel
+        if (typeof window !== "undefined" && window.fbq) {
+          window.fbq("track", "Lead", {
+            content_name: "quiz_email_capture",
+            content_category: "quiz_funnel",
+          });
+        }
       }
       
       setState((prev) => ({ ...prev, isSubmitting: false }));
