@@ -40,15 +40,17 @@ export const QuizQuestion = memo(function QuizQuestion({
       <div className="min-h-screen flex flex-col px-4 py-5 md:px-4 md:py-8">
         {/* Header with progress */}
         <div className="max-w-2xl mx-auto w-full mb-5 md:mb-8">
-          <div className="flex items-center justify-between mb-3 md:mb-4">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5 md:w-5 md:h-5" />
-              <span className="text-sm md:text-sm">Voltar</span>
-            </button>
-          </div>
+          {questionNumber > 1 && (
+            <div className="flex items-center justify-between mb-3 md:mb-4">
+              <button
+                onClick={onBack}
+                className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5 md:w-5 md:h-5" />
+                <span className="text-sm md:text-sm">Voltar</span>
+              </button>
+            </div>
+          )}
 
           {/* Progress bar */}
           <div className="relative h-2.5 md:h-3 bg-[hsl(350_30%_12%)] rounded-full overflow-hidden border border-[hsl(350_40%_20%)/0.3]">
