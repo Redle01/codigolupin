@@ -71,9 +71,7 @@ export function useQuiz() {
     localStorage.setItem(QUIZ_STATE_STORAGE_KEY, JSON.stringify(stateToStore));
   }, [state.currentStep, state.currentQuestion, state.answers, state.email, state.result]);
 
-  const startQuiz = useCallback(() => {
-    setState((prev) => ({ ...prev, currentStep: "questions", currentQuestion: 0 }));
-  }, []);
+
 
   const answerQuestion = useCallback((questionId: number, answerId: string) => {
     setState((prev) => {
