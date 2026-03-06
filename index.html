@@ -67,6 +67,8 @@
       if(!vid){vid='v_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);localStorage.setItem('quiz_visitor_id',vid);}
       navigator.sendBeacon('https://enbhyeddogbocxgttkkd.supabase.co/functions/v1/quiz-metrics',
         JSON.stringify({action:'track',visitor_id:vid,page_key:'link_click'}));
+      navigator.sendBeacon('https://enbhyeddogbocxgttkkd.supabase.co/functions/v1/quiz-metrics',
+        JSON.stringify({action:'track',visitor_id:vid,page_key:'question1_entry'}));
       sessionStorage.setItem('lc_tracked','1');
     })();
     </script>
