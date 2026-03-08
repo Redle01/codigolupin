@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 import { subDays } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { useFunnelMetrics } from "@/hooks/useFunnelMetrics";
