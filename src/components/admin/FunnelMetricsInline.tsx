@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { 
   Users, 
   AlertTriangle, 
@@ -84,18 +83,16 @@ function FunnelStepCard({
   
   return (
     <div className="flex items-center">
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.03 }}
+      <div 
         className={cn(
-          "relative flex flex-col rounded-xl border p-3 lg:p-4 transition-all flex-shrink-0",
+          "relative flex flex-col rounded-xl border p-3 lg:p-4 transition-all flex-shrink-0 animate-fade-in-up",
           size === "large" ? "min-w-[120px] lg:min-w-[160px]" : "min-w-[70px] lg:min-w-[90px]",
           isBiggestDropoff && "ring-2 ring-destructive ring-offset-2 ring-offset-background",
           isHighlight && "border-primary bg-primary/10",
           isResult && "border-green-500/30 bg-green-500/10",
           !isHighlight && !isResult && healthBg
         )}
+        style={{ animationDelay: `${index * 0.03}s`, animationFillMode: 'both' }}
       >
         {/* Label */}
         <span className={cn(
@@ -130,7 +127,7 @@ function FunnelStepCard({
             Gargalo
           </div>
         )}
-      </motion.div>
+      </div>
       
       {/* Seta de Conexao */}
       {showArrow && (
@@ -158,7 +155,6 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
   const overallConversion = getConversionRate("landing", "result");
   const emailConversion = getConversionRate("landing", "email");
 
-  // Find the biggest dropoff point
   let biggestDropoff = { from: "", to: "", rate: 0, fromKey: "" as keyof FunnelMetricsType["pageViews"], toKey: "" as keyof FunnelMetricsType["pageViews"] };
   funnelSteps.forEach((step, index) => {
     const nextStep = funnelSteps[index + 1];
@@ -176,7 +172,6 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
     }
   });
 
-  // Group steps
   const preEmailSteps = funnelSteps.filter(s => s.group === "start" || s.group === "questions");
   const emailStep = funnelSteps.find(s => s.group === "email")!;
   const postEmailSteps = funnelSteps.filter(s => s.group === "result");
@@ -185,7 +180,6 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
     <div className="space-y-6">
       {/* Quick Metrics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 lg:gap-4">
-        {/* Cliques no Link */}
         <Card className="relative overflow-hidden">
           <CardContent className="p-5 relative">
             <div className="flex items-center justify-between mb-2">
@@ -197,7 +191,6 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
           </CardContent>
         </Card>
 
-        {/* Entradas (página carregada) */}
         <Card className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
           <CardContent className="p-5 relative">
@@ -210,7 +203,6 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
           </CardContent>
         </Card>
         
-        {/* Taxa de Captura de Email */}
         <Card className="relative overflow-hidden">
           <CardContent className="p-5 relative">
             <div className="flex items-center justify-between mb-2">
@@ -227,7 +219,6 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
           </CardContent>
         </Card>
         
-        {/* Conversao Final */}
         <Card className="relative overflow-hidden border-green-500/20">
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent" />
           <CardContent className="p-5 relative">
@@ -240,7 +231,6 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
           </CardContent>
         </Card>
         
-        {/* Maior Gargalo */}
         <Card className="relative overflow-hidden border-destructive/30 bg-destructive/5">
           <CardContent className="p-5 relative">
             <div className="flex items-center justify-between mb-2">
@@ -259,7 +249,6 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
           <CardTitle className="text-sm font-medium">Fluxo do Funil</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Pre-Email Journey */}
           <div className="relative">
             <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">
               Jornada Pré-Email
@@ -280,7 +269,6 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
             </div>
           </div>
           
-          {/* Email Capture - Critical Point */}
           <div className="relative border-y border-primary/20 py-4 bg-primary/5 -mx-6 px-6">
             <h4 className="text-xs font-medium text-primary mb-3 uppercase tracking-wider flex items-center gap-2">
               <Mail className="h-4 w-4" />
@@ -304,7 +292,6 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
             </div>
           </div>
           
-          {/* Post-Email Journey */}
           <div className="relative">
             <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">
               Jornada Pós-Email
@@ -336,20 +323,17 @@ export function FunnelMetricsInline({ metrics, getDropoffRate, getConversionRate
               {[...funnelSteps].reverse().map((step, i) => {
                 const width = maxViews > 0 ? (metrics.pageViews[step.key] / maxViews) * 100 : 0;
                 return (
-                  <motion.div
+                  <div
                     key={step.key}
-                    initial={{ width: 0 }}
-                    animate={{ width: `${width}%` }}
-                    transition={{ duration: 0.5, delay: i * 0.03 }}
                     className={cn(
-                      "absolute left-0 top-0 h-full",
+                      "absolute left-0 top-0 h-full transition-all duration-500",
                       step.key === "result" 
                         ? "bg-green-500" 
                         : step.key === "email" 
                           ? "bg-primary" 
                           : "bg-primary/60"
                     )}
-                    style={{ zIndex: i + 1 }}
+                    style={{ width: `${width}%`, zIndex: i + 1, transitionDelay: `${i * 0.03}s` }}
                   />
                 );
               })}
