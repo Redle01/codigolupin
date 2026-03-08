@@ -37,6 +37,14 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function Admin() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AdminContent />
+    </QueryClientProvider>
+  );
+}
+
+function AdminContent() {
   const { user, isAdmin, isLoading: isAuthLoading, signIn, signOut } = useAuth();
   const { metrics, resetMetrics, refreshMetrics, getDropoffRate, getConversionRate } = useFunnelMetrics();
   const { stats, fetchStats } = useLeads();
