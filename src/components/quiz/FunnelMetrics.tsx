@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { BarChart3, Users, TrendingDown, RotateCcw, ArrowDown, Target, AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FunnelMetrics as FunnelMetricsType } from "@/hooks/useFunnelMetrics";
@@ -46,7 +45,6 @@ export function FunnelMetricsPanel({ metrics, onReset, onRefresh, getDropoffRate
   const emailConversion = getConversionRate("landing", "email");
   const uniqueVisitors = metrics.uniqueVisitors;
 
-  // Auto-refresh every 5 seconds when enabled
   useEffect(() => {
     if (!autoRefresh) return;
     
@@ -63,7 +61,6 @@ export function FunnelMetricsPanel({ metrics, onReset, onRefresh, getDropoffRate
     setTimeout(() => setIsRefreshing(false), 500);
   };
 
-  // Find the biggest dropoff point
   let biggestDropoff = { from: "", to: "", rate: 0 };
   funnelSteps.forEach((step, index) => {
     const nextStep = funnelSteps[index + 1];
@@ -165,10 +162,9 @@ export function FunnelMetricsPanel({ metrics, onReset, onRefresh, getDropoffRate
 
       {/* Biggest Dropoff Alert */}
       {biggestDropoff.rate > 20 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 flex items-start gap-2"
+        <div
+          className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 flex items-start gap-2 animate-scale-in"
+          style={{ animationFillMode: 'both' }}
         >
           <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
           <div>
@@ -177,7 +173,7 @@ export function FunnelMetricsPanel({ metrics, onReset, onRefresh, getDropoffRate
               {biggestDropoff.from} → {biggestDropoff.to}: <span className="text-destructive font-semibold">{biggestDropoff.rate}%</span> de abandono
             </p>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Funnel Visualization */}
@@ -196,19 +192,15 @@ export function FunnelMetricsPanel({ metrics, onReset, onRefresh, getDropoffRate
             return (
               <div key={step.key}>
                 {/* Step Card */}
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  className="bg-muted/30 rounded-lg p-2.5 border border-border/50 hover:border-primary/30 transition-colors"
+                <div
+                  className="bg-muted/30 rounded-lg p-2.5 border border-border/50 hover:border-primary/30 transition-colors animate-fade-in-up"
+                  style={{ animationDelay: `${index * 0.03}s`, animationFillMode: 'both' }}
                 >
                   <div className="flex items-center gap-3">
-                    {/* Icon & Preview */}
                     <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10 text-lg shrink-0">
                       {step.icon}
                     </div>
                     
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <div>
@@ -223,16 +215,14 @@ export function FunnelMetricsPanel({ metrics, onReset, onRefresh, getDropoffRate
                       
                       {/* Progress Bar */}
                       <div className="mt-2 h-1.5 bg-muted/50 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${barWidth}%` }}
-                          transition={{ duration: 0.5, delay: index * 0.05 }}
+                        <div
                           className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full"
+                          style={{ width: `${barWidth}%`, transition: 'width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)', transitionDelay: `${index * 0.05}s` }}
                         />
                       </div>
                     </div>
                   </div>
-                </motion.div>
+                </div>
 
                 {/* Dropoff Indicator */}
                 {dropoff !== null && dropoff > 0 && (

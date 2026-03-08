@@ -25,7 +25,6 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: {
           'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-framer': ['framer-motion'],
           'vendor-react-query': ['@tanstack/react-query'],
           'vendor-router': ['react-router-dom'],
         }
