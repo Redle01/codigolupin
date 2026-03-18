@@ -81,7 +81,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout }: QuizR
           className="bg-card border-2 border-primary/50 rounded-xl md:rounded-2xl p-5 md:p-8 mb-5 md:mb-8 w-full animate-fade-in-up"
           style={{ animationDelay: '0.8s', animationFillMode: 'both' }}
         >
-          <p className="text-muted-foreground font-medium text-center text-sm md:text-base mb-3">
+          <p className="text-muted-foreground font-medium text-center text-base md:text-base mb-3">
             {pricing.emoji} {pricing.label}
           </p>
           <div className="flex items-baseline justify-center gap-1 mb-4">
