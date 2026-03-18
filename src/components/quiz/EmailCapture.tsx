@@ -84,7 +84,7 @@ export const EmailCapture = memo(function EmailCapture({
                 onEmailChange(e.target.value);
                 setError("");
               }}
-              className="pl-10 md:pl-12 h-12 md:h-14 bg-input border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary text-sm md:text-base"
+              className="pl-10 md:pl-12 h-12 md:h-14 bg-input border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary text-base md:text-base"
             />
           </div>
 
