@@ -110,7 +110,7 @@ export const QuizQuestion = memo(function QuizQuestion({
                         option.id.toUpperCase()
                       )}
                     </span>
-                    <span className="flex-1 text-foreground text-left whitespace-normal break-words leading-relaxed">
+                    className={`w-full flex items-center px-4 py-4 md:p-5 h-auto min-h-[4rem] md:min-h-[4rem] text-base md:text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 active:scale-[0.98] ${
                       {option.text}
                     </span>
                   </Button>

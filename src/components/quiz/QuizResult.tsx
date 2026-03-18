@@ -125,7 +125,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout }: QuizR
           <Button
             onClick={handleCheckoutClick}
             size="lg"
-            className="w-full h-auto min-h-[3.5rem] md:min-h-[4rem] py-3 md:py-4 px-4 md:px-6 bg-gradient-green text-primary-foreground font-bold text-xs sm:text-sm md:text-lg rounded-xl shadow-green-lg hover:shadow-green transition-all duration-300 hover:scale-[1.02] group leading-tight whitespace-normal text-center"
+            className="w-full h-auto min-h-[3.5rem] md:min-h-[4rem] py-3 md:py-4 px-4 md:px-6 bg-gradient-green text-primary-foreground font-bold text-sm sm:text-base md:text-lg rounded-xl shadow-green-lg hover:shadow-green transition-all duration-300 hover:scale-[1.02] group leading-tight whitespace-normal text-center"
           >
             {result.ctaText}
             <ArrowRight className="w-5 h-5 md:w-5 md:h-5 ml-2 shrink-0 group-hover:translate-x-1 transition-transform" />

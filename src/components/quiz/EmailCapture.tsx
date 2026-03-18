@@ -90,7 +90,7 @@ export const EmailCapture = memo(function EmailCapture({
 
           {error && (
             <p
-              className="text-destructive text-xs md:text-sm text-center animate-fade-in-up"
+              className="text-destructive text-sm md:text-sm text-center animate-fade-in-up"
               style={{ animationDuration: '0.2s', animationFillMode: 'both' }}
             >
               {error}
