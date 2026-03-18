@@ -44,7 +44,7 @@ export function Quiz() {
   } = useQuiz();
 
   const { metrics, trackPageView } = useFunnelMetrics();
-  const { trackPageView: trackMetaPageView, setExternalId, initWithUser } = useMetaPixel();
+  const { setExternalId, initWithUser } = useMetaPixel();
   const lastTrackedPage = useRef<string | null>(null);
   const pixelInitializedRef = useRef(false);
 
