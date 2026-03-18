@@ -32,7 +32,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout }: QuizR
           <h1 className="font-serif-display text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4">
             <span className="text-gradient-gold">{result.title}</span>
           </h1>
-          <p className="text-primary/70 text-sm md:text-sm mt-2 md:mt-2">
+          <p className="text-primary/70 text-base md:text-base mt-2 md:mt-2">
             {result.percentage} dos homens compartilham este perfil
           </p>
         </div>
