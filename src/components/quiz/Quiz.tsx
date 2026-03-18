@@ -44,7 +44,7 @@ export function Quiz() {
   } = useQuiz();
 
   const { metrics, trackPageView } = useFunnelMetrics();
-  const { trackPageView: trackMetaPageView, setExternalId, initWithUser } = useMetaPixel();
+  const { setExternalId, initWithUser } = useMetaPixel();
   const lastTrackedPage = useRef<string | null>(null);
   const pixelInitializedRef = useRef(false);
 
@@ -119,10 +119,9 @@ export function Quiz() {
 
     if (currentPage !== lastTrackedPage.current) {
       trackPageView(currentPage as keyof typeof metrics.pageViews);
-      trackMetaPageView();
       lastTrackedPage.current = currentPage;
     }
-  }, [trackingReady, state.currentStep, state.currentQuestion, trackPageView, trackMetaPageView, isInternal, metrics.pageViews]);
+  }, [trackingReady, state.currentStep, state.currentQuestion, trackPageView, isInternal, metrics.pageViews]);
 
   // Update Meta Pixel with email when captured
   useEffect(() => {
