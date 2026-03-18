@@ -71,7 +71,7 @@ export const QuizQuestion = memo(function QuizQuestion({
           className="w-full animate-fade-in"
           style={{ animationDuration: '0.3s', animationFillMode: 'both' }}
         >
-          <h2 className="text-xl md:text-3xl font-bold text-center mb-6 md:mb-10 text-foreground leading-relaxed">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-10 text-foreground leading-relaxed">
             {question}
           </h2>
 
