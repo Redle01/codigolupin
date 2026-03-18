@@ -85,7 +85,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout }: QuizR
             {pricing.emoji} {pricing.label}
           </p>
           <div className="flex items-baseline justify-center gap-1 mb-4">
-            <span className="text-muted-foreground text-xs md:text-sm">{pricing.installments}</span>
+            <span className="text-muted-foreground text-sm md:text-sm">{pricing.installments}</span>
             <span className="text-green-500 text-base md:text-lg font-semibold">{pricing.currency}</span>
             <span className="text-green-500 text-5xl md:text-6xl font-bold leading-none">{pricing.amount}</span>
             <span className="text-green-500 text-base md:text-lg font-semibold self-start mt-1">{pricing.cents}</span>
