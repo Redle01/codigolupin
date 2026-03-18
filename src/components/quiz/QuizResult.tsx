@@ -91,13 +91,13 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout }: QuizR
             <span className="text-green-500 text-base md:text-lg font-semibold self-start mt-1">{pricing.cents}</span>
           </div>
           
-          <p className="text-muted-foreground text-sm md:text-sm mb-3">Bônus Inclusos:</p>
+          <p className="text-muted-foreground text-base md:text-base mb-3">Bônus Inclusos:</p>
           <ul className="space-y-2">
-            <li className="text-foreground text-sm md:text-base">
+            <li className="text-foreground text-base md:text-base">
               {bonuses.primary}
               {bonuses.primaryPrice && <s className="text-muted-foreground ml-1">{bonuses.primaryPrice}</s>}
             </li>
-            <li className="text-foreground text-sm md:text-base">
+            <li className="text-foreground text-base md:text-base">
               {bonuses.secondary}
               {bonuses.secondaryPrice && <s className="text-muted-foreground ml-1">{bonuses.secondaryPrice}</s>}
             </li>
