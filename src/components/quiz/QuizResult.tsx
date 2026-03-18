@@ -29,7 +29,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout }: QuizR
           className="text-center mb-5 md:mb-8 animate-fade-in-up"
           style={{ animationDelay: '0.3s', animationFillMode: 'both' }}
         >
-          <h1 className="font-serif-display text-2xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4">
+          <h1 className="font-serif-display text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-4">
             <span className="text-gradient-gold">{result.title}</span>
           </h1>
           <p className="text-primary/70 text-sm md:text-sm mt-2 md:mt-2">
