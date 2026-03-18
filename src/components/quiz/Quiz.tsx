@@ -119,7 +119,6 @@ export function Quiz() {
 
     if (currentPage !== lastTrackedPage.current) {
       trackPageView(currentPage as keyof typeof metrics.pageViews);
-      trackMetaPageView();
       lastTrackedPage.current = currentPage;
     }
   }, [trackingReady, state.currentStep, state.currentQuestion, trackPageView, trackMetaPageView, isInternal, metrics.pageViews]);
