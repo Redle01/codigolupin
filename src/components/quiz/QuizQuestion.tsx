@@ -91,7 +91,7 @@ export const QuizQuestion = memo(function QuizQuestion({
                     variant="outline"
                     onClick={() => handleAnswer(option.id)}
                     disabled={justSelected !== null}
-                    className={`w-full flex items-center px-4 py-4 md:p-5 h-auto min-h-[4rem] md:min-h-[4rem] text-sm md:text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 active:scale-[0.98] ${
+                    className={`w-full flex items-center px-4 py-4 md:p-5 h-auto min-h-[4rem] md:min-h-[4rem] text-base md:text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 active:scale-[0.98] ${
                       isSelected
                         ? "border-primary bg-primary/10"
                         : "border-border"
@@ -110,7 +110,7 @@ export const QuizQuestion = memo(function QuizQuestion({
                         option.id.toUpperCase()
                       )}
                     </span>
-                    className={`w-full flex items-center px-4 py-4 md:p-5 h-auto min-h-[4rem] md:min-h-[4rem] text-base md:text-base border-2 transition-all duration-300 hover:border-primary hover:bg-primary/5 active:scale-[0.98] ${
+                    <span className="flex-1 text-foreground text-left whitespace-normal break-words leading-relaxed">
                       {option.text}
                     </span>
                   </Button>

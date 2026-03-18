@@ -71,7 +71,7 @@ export const QuizResult = memo(function QuizResult({ result, onCheckout }: QuizR
           <h3 className="font-serif-display text-lg md:text-xl font-bold text-primary mb-3 md:mb-4">
             🎯 Próximo Passo
           </h3>
-          <p className="text-foreground/90 leading-relaxed text-sm md:text-base">
+          <p className="text-foreground/90 leading-relaxed text-base md:text-base">
             {result.nextStep}
           </p>
         </div>
